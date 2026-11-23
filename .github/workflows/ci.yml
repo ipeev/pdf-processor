@@ -77,15 +77,20 @@ jobs:
           docker compose version
           cp .env.example .env
           chmod 600 .env
+          # Preserve the monitored default in backend unit tests. Their
+          # OpenRouter responses are mocked; an empty API key prevents real
+          # provider requests from the running application.
           sed -i \
             -e 's/^OPENROUTER_API_KEY=.*/OPENROUTER_API_KEY=/' \
             -e 's/^RUN_LIVE_TESTS=.*/RUN_LIVE_TESTS=0/' \
-            -e 's/^OPENROUTER_MONITOR_ENABLED=.*/OPENROUTER_MONITOR_ENABLED=false/' \
-            -e 's/^OBSERVABILITY_ENABLED=.*/OBSERVABILITY_ENABLED=false/' \
+            -e 's/^OPENROUTER_MONITOR_ENABLED=.*/OPENROUTER_MONITOR_ENABLED=true/' \
+            -e 's/^OBSERVABILITY_ENABLED=.*/OBSERVABILITY_ENABLED=true/' \
             -e 's/^DOCKER_TELEMETRY_ENABLED=.*/DOCKER_TELEMETRY_ENABLED=false/' \
             .env
           grep -qx 'OPENROUTER_API_KEY=' .env
           grep -qx 'RUN_LIVE_TESTS=0' .env
+          grep -qx 'OPENROUTER_MONITOR_ENABLED=true' .env
+          grep -qx 'OBSERVABILITY_ENABLED=true' .env
           docker compose config -q
 
       - name: Full backend, frontend and real-service verification (NO PAID API calls)
