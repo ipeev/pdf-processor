@@ -21,7 +21,7 @@ COPY backend/app/schemas.py /backend/app/schemas.py
 COPY frontend/tests ./tests
 RUN npm test && npm run build
 
-FROM nginx:1.27-alpine
+FROM nginx:1.31-alpine
 COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=builder /workspace/dist /usr/share/nginx/html
 EXPOSE 80
