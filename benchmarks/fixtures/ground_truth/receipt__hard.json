@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "seed": 20261112,
+  "id": "receipt",
+  "variant": "hard",
+  "title": "Market receipt",
+  "category": "scan",
+  "pages": [
+    "NORTHSIDE MARKET RECEIPT\nReceipt: R-37617\nRegister: 004\nSubtotal: 55.30\nDiscount: 5.30\nAmount due: 50.00\nProduct Count Price\nCoffee beans 2 18.40\nPaper filters 1 6.20\nThermal labels 3 4.10\nSYNTHETIC BENCHMARK / NOT A REAL DOCUMENT\n1/1"
+  ],
+  "fields": {
+    "receipt": "R-37617",
+    "subtotal": "55.30",
+    "discount": "5.30",
+    "total": "50.00"
+  },
+  "tables": [
+    {
+      "page": 1,
+      "rows": [
+        [
+          "Product",
+          "Count",
+          "Price"
+        ],
+        [
+          "Coffee beans",
+          "2",
+          "18.40"
+        ],
+        [
+          "Paper filters",
+          "1",
+          "6.20"
+        ],
+        [
+          "Thermal labels",
+          "3",
+          "4.10"
+        ]
+      ]
+    }
+  ],
+  "summary_facts": [],
+  "pdf": "pdf/receipt__hard.pdf",
+  "sha256": "5e4a07869161b189327da1df6c50410f0bcfb74fcfca1e13f73531ee62bcffa2",
+  "has_text_layer": false,
+  "noise": "108dpi raster, JPEG compression, blur, low contrast, seeded grain"
+}

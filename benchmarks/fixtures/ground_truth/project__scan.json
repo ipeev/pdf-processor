@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "seed": 20261112,
+  "id": "project",
+  "variant": "scan",
+  "title": "Conflicting project report",
+  "category": "summary",
+  "pages": [
+    "PROJECT RIVERMARK | OPERATIONS REPORT\nPrepared: 12 November 2026\nRevenue increased by 12% compared with last quarter.\nOperating expenses increased by 19%.\nNet profit decreased by 4%.\nTwo new branches opened in October.\nStatus: deployment is delayed by two weeks.\nSYNTHETIC BENCHMARK / NOT A REAL DOCUMENT\n1/2",
+    "PROJECT RIVERMARK | QUALITY NOTES\nThe executive overview labels deployment ON SCHEDULE.\nThe detailed status record describes a two-week delay.\nThese statements conflict and require clarification.\nNo cause for the delay is stated in this report.\nNo forecast for next quarter is provided.\nSYNTHETIC BENCHMARK / NOT A REAL DOCUMENT\n2/2"
+  ],
+  "fields": {
+    "revenue_growth": "12%",
+    "expense_growth": "19%",
+    "profit_change": "4%",
+    "branches": "Two",
+    "delay": "two weeks",
+    "overview_status": "ON SCHEDULE",
+    "detail_delay": "two-week delay"
+  },
+  "tables": [],
+  "summary_facts": [
+    "revenue increased by 12%",
+    "operating expenses increased by 19%",
+    "net profit decreased by 4%",
+    "two new branches",
+    "delayed by two weeks",
+    "conflicting deployment status statements",
+    "cause for the delay is not stated"
+  ],
+  "pdf": "pdf/project__scan.pdf",
+  "sha256": "9814dad27b03a088a47bdad9d24900b12a68d6fcd7f1ed292ff622bb2ff40c1c",
+  "has_text_layer": false,
+  "noise": "196dpi raster, mild skew"
+}

@@ -1,0 +1,36 @@
+{
+  "markdown": "## 3. Two-column layout challenge\n\n\n\n### Left column - method\n\nThe left column should be read entirely before the right column. The inspection map in Figure 3 belongs to the analysis in the right column.\n\nThe device is checked for localized heating after a twenty-minute run. Each grid square represents an observation location.\n\n**Important placement test:** A system that sorts blocks only by vertical position could wrongly put Figure 3 inside this paragraph.\n\nThe next paragraph remains in the left column. Do not merge it with the caption in the right column.\n\n\n\n### Right column - results\n\nFigure 3 shows a synthetic inspection heatmap. The hot area is toward the upper-right of the grid.\n\n[[FIGURE:figure-1]]\n\n**Figure 3.** Synthetic inspection heatmap; the bright region is in the upper-right quadrant.\n\nThe conclusion follows the picture and its caption. The figure should remain in the right column's reading order.\n\n\n\n### End of page\n\nThe sample contains three figures. The first two are on page 1, and the third is on page 2.",
+  "figures": [
+    {
+      "id": "figure-1",
+      "bbox_norm": [
+        520,
+        246,
+        908,
+        456
+      ],
+      "caption": "Figure 3. Synthetic inspection heatmap; the bright region is in the upper-right quadrant.",
+      "kind": "chart",
+      "caption_bbox_norm": [
+        520,
+        459,
+        923,
+        490
+      ],
+      "nearby_text_bboxes_norm": [
+        [
+          520,
+          165,
+          923,
+          214
+        ],
+        [
+          520,
+          499,
+          924,
+          550
+        ]
+      ]
+    }
+  ]
+}

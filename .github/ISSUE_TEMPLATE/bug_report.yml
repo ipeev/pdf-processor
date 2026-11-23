@@ -1,0 +1,47 @@
+name: Bug report
+description: Report a reproducible application defect
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not attach private PDFs, `.env`, real API keys, archives, or unredacted logs.
+        For security issues, follow SECURITY.md instead of using this public form.
+  - type: input
+    id: version
+    attributes:
+      label: Version / commit
+      placeholder: v0.12.3
+    validations:
+      required: true
+  - type: dropdown
+    id: parser
+    attributes:
+      label: Parser
+      options:
+        - Not applicable
+        - pypdf
+        - gemini
+        - gpt5_mini
+        - vision_figures
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce (with synthetic data)
+      description: Exact commands or UI actions; do not include private documents.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior and sanitized diagnostics
+    validations:
+      required: true

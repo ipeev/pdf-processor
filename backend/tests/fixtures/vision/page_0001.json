@@ -1,0 +1,67 @@
+{
+  "markdown": "# Figure-placement experiment\n\nThis document deliberately combines prose, figures, captions and a two-column layout. It is a test fixture, not real scientific results.\n\n## 1. Bench apparatus\n\nThe sensor bench in Figure 1 routes three inputs through a calibrated controller. The paragraph describing the bench appears **before** the picture.\n\n[[FIGURE:figure-1]]\n\n**Figure 1.** Three-channel sensor bench with a reference probe and a data logger.\n\nThe controller sends readings to a logger every five seconds. The reference probe is used to check drift.\n\n## 2. Calibration curve\n\nThe temperature plot in Figure 2 shows an increase followed by a plateau. The explanation is placed above the chart.\n\n[[FIGURE:figure-2]]\n\n**Figure 2.** Calibration curve for three synthetic measurements. Values are invented solely for this test.\n\nAfter the plot, this paragraph explains that measurements above minute 10 change only slightly. **The model should not move Figure 2 below this paragraph.**",
+  "figures": [
+    {
+      "id": "figure-1",
+      "bbox_norm": [
+        83,
+        262,
+        697,
+        466
+      ],
+      "caption": "Figure 1. Three-channel sensor bench with a reference probe and a data logger.",
+      "kind": "diagram",
+      "caption_bbox_norm": [
+        83,
+        469,
+        780,
+        486
+      ],
+      "nearby_text_bboxes_norm": [
+        [
+          83,
+          200,
+          924,
+          237
+        ],
+        [
+          83,
+          494,
+          919,
+          527
+        ]
+      ]
+    },
+    {
+      "id": "figure-2",
+      "bbox_norm": [
+        83,
+        646,
+        677,
+        849
+      ],
+      "caption": "Figure 2. Calibration curve for three synthetic measurements. Values are invented solely for this test.",
+      "kind": "chart",
+      "caption_bbox_norm": [
+        83,
+        852,
+        921,
+        871
+      ],
+      "nearby_text_bboxes_norm": [
+        [
+          83,
+          580,
+          925,
+          621
+        ],
+        [
+          83,
+          878,
+          929,
+          913
+        ]
+      ]
+    }
+  ]
+}

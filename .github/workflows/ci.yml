@@ -1,0 +1,114 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+# No external service secrets or provider API keys are needed.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  source-and-frontend:
+    name: Source checks and frontend
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Python 3.15.2
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.15.2'
+
+      - name: Python source and dependency verification (no provider access)
+        run: |
+          python3 --version
+          python3 scripts/check_publication.py
+          python3 scripts/check_release_candidate.py
+          python3 -m compileall -q backend/app scripts
+          find scripts -type f -name '*.sh' -print0 | xargs -0 -r bash -n
+          # Compose validation checks ports/networks without starting services.
+          docker compose config -q
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install pinned frontend dependencies
+        working-directory: frontend
+        run: npm ci --no-audit --no-fund
+
+      - name: Frontend contract tests
+        working-directory: frontend
+        run: npm test
+
+      - name: TypeScript and production Vite build
+        working-directory: frontend
+        run: npm run build
+
+  offline-integration:
+    name: Complete offline Docker integration
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Prepare isolated, free test environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo sysctl -w vm.max_map_count=262144
+          docker version
+          docker compose version
+          cp .env.example .env
+          chmod 600 .env
+          sed -i \
+            -e 's/^OPENROUTER_API_KEY=.*/OPENROUTER_API_KEY=/' \
+            -e 's/^RUN_LIVE_TESTS=.*/RUN_LIVE_TESTS=0/' \
+            -e 's/^OPENROUTER_MONITOR_ENABLED=.*/OPENROUTER_MONITOR_ENABLED=false/' \
+            -e 's/^OBSERVABILITY_ENABLED=.*/OBSERVABILITY_ENABLED=false/' \
+            -e 's/^DOCKER_TELEMETRY_ENABLED=.*/DOCKER_TELEMETRY_ENABLED=false/' \
+            .env
+          grep -qx 'OPENROUTER_API_KEY=' .env
+          grep -qx 'RUN_LIVE_TESTS=0' .env
+          docker compose config -q
+
+      - name: Full backend, frontend and real-service verification (NO PAID API calls)
+        env:
+          RUN_LIVE_TESTS: '0'
+          OPENROUTER_API_KEY: ''
+        # verify.sh performs setup, real Redis/RustFS/OpenSearch tests, failover,
+        # restart recovery, fixture-backed figures and an npm test/build stage.
+        run: ./scripts/test_release.sh --offline
+
+      - name: Focused v0.12.3 regression verification
+        env:
+          RUN_LIVE_TESTS: '0'
+          OPENROUTER_API_KEY: ''
+        # Forces the uncached frontend Docker build; catches missing COPY paths.
+        run: ./scripts/check_regressions.sh
+
+      - name: Show logs after failure (synthetic CI fixtures only)
+        if: failure()
+        run: docker compose logs --tail=100 api worker redis rustfs opensearch frontend || true
+
+      - name: Stop ephemeral test stack
+        if: always()
+        run: |
+          ./scripts/telemetry.sh stop || true
+          docker compose down --remove-orphans || true

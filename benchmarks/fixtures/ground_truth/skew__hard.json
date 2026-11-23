@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "seed": 20261112,
+  "id": "skew",
+  "variant": "hard",
+  "title": "Field survey card",
+  "category": "scan",
+  "pages": [
+    "FIELD SURVEY CARD\nSurvey reference: SUR-37617\nStation altitude: 1,248 meters\nBearing: 087.5 degrees\nLatitude token: N42-31-08\nObserver signature: K. Ali\nSYNTHETIC BENCHMARK / NOT A REAL DOCUMENT\n1/1"
+  ],
+  "fields": {
+    "survey_id": "SUR-37617",
+    "altitude": "1,248",
+    "bearing": "087.5",
+    "latitude": "N42-31-08"
+  },
+  "tables": [],
+  "summary_facts": [],
+  "pdf": "pdf/skew__hard.pdf",
+  "sha256": "9e10cbc572e2960299b82037f8263bff94d8e2a5a55f3b88a9355ba06751e7c5",
+  "has_text_layer": false,
+  "noise": "108dpi raster, JPEG compression, blur, low contrast, seeded grain"
+}

@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "seed": 20261112,
+  "id": "serial",
+  "variant": "clean",
+  "title": "Ambiguous serial characters",
+  "category": "exact_id",
+  "pages": [
+    "TECHNICAL SERIAL AUDIT\nVerify exact characters: O / 0 and I / 1 / l\nDevice identifier: SN-O0I1l5B8\nLot number: LOT-008O0I1\nPCB code: PCB-AZ-71Q0\nChecksum label: CHK-111I0O\nVoltage setting: 24.05 V\nSYNTHETIC BENCHMARK / NOT A REAL DOCUMENT\n1/1"
+  ],
+  "fields": {
+    "device": "SN-O0I1l5B8",
+    "lot": "LOT-008O0I1",
+    "pcb": "PCB-AZ-71Q0",
+    "checksum": "CHK-111I0O"
+  },
+  "tables": [],
+  "summary_facts": [],
+  "pdf": "pdf/serial__clean.pdf",
+  "sha256": "4b56c59a56b497d3924d5445d6d4ab415cee1d0649b6838ea07343d4140c4f62",
+  "has_text_layer": true,
+  "noise": "none"
+}

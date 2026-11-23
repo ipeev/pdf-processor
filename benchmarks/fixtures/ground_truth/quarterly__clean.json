@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "seed": 20261112,
+  "id": "quarterly",
+  "variant": "clean",
+  "title": "Financial table",
+  "category": "table",
+  "pages": [
+    "QUARTERLY FINANCIAL REVIEW\nReporting period: Q4 2026\nRevenue increased while operating margin declined.\nOperating margin: 11.2%\nCash balance: USD 453210\nSegment Q3 USD Q4 USD\nHardware 120000 134400\nSoftware 95000 110200\nServices 85000 92800\nSYNTHETIC BENCHMARK / NOT A REAL DOCUMENT\n1/1"
+  ],
+  "fields": {
+    "period": "Q4 2026",
+    "margin": "11.2%",
+    "cash": "453210",
+    "hardware_q4": "134400"
+  },
+  "tables": [
+    {
+      "page": 1,
+      "rows": [
+        [
+          "Segment",
+          "Q3 USD",
+          "Q4 USD"
+        ],
+        [
+          "Hardware",
+          "120000",
+          "134400"
+        ],
+        [
+          "Software",
+          "95000",
+          "110200"
+        ],
+        [
+          "Services",
+          "85000",
+          "92800"
+        ]
+      ]
+    }
+  ],
+  "summary_facts": [
+    "Q4 2026",
+    "11.2%",
+    "453210"
+  ],
+  "pdf": "pdf/quarterly__clean.pdf",
+  "sha256": "29f247102bf0c7c4a2e3ea86135d419c5d5c111f6c3666fc9dc8eb526c58d914",
+  "has_text_layer": true,
+  "noise": "none"
+}

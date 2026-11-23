@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "seed": 20261112,
+  "id": "lowres",
+  "variant": "clean",
+  "title": "Maintenance note",
+  "category": "scan",
+  "pages": [
+    "MAINTENANCE SERVICE NOTE\nTicket: MA-37617\nMachine: Lathe 7B\nVibration at 18.6 mm/s exceeded the 15.0 mm/s threshold.\nReplacement filter installed at 14:20.\nSupervisor: E. Novak\nSYNTHETIC BENCHMARK / NOT A REAL DOCUMENT\n1/1"
+  ],
+  "fields": {
+    "ticket": "MA-37617",
+    "measured": "18.6",
+    "threshold": "15.0",
+    "time": "14:20"
+  },
+  "tables": [],
+  "summary_facts": [],
+  "pdf": "pdf/lowres__clean.pdf",
+  "sha256": "29eef17eb7ce379e0da2bb84223f198bda05448381fdc5f96d9f87525d1ecb4c",
+  "has_text_layer": true,
+  "noise": "none"
+}

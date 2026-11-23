@@ -1,0 +1,16 @@
+.git
+.env
+.env.*
+!.env.example
+__pycache__
+*.pyc
+.pytest_cache
+.venv
+node_modules
+*.zip
+coverage
+.ruff_cache
+.uv-cache
+
+# Local acceptance-test reports.
+reports/

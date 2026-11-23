@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "seed": 20261112,
+  "id": "bilingual",
+  "variant": "hard",
+  "title": "English and Cyrillic",
+  "category": "multilingual",
+  "pages": [
+    "BILINGUAL DELIVERY NOTE / ДВУЕЗИЧНА РАЗПИСКА\nSender / Подател: Sofia Distribution\nRecipient / Получател: Пловдив Лаборатория\nReference / Номер: BG-37617\nКоличество / Quantity: 27\nДоставка: петък, 13 ноември\nStorage temperature / Температура: 4°C\nSYNTHETIC BENCHMARK / NOT A REAL DOCUMENT\n1/1"
+  ],
+  "fields": {
+    "reference": "BG-37617",
+    "quantity": "27",
+    "temperature": "4°C",
+    "recipient": "Пловдив Лаборатория"
+  },
+  "tables": [],
+  "summary_facts": [],
+  "pdf": "pdf/bilingual__hard.pdf",
+  "sha256": "dc9f77d94b6311029e04a95906c56152843d9b3ae9f4f9aebc000657ab483d37",
+  "has_text_layer": false,
+  "noise": "108dpi raster, JPEG compression, blur, low contrast, seeded grain"
+}

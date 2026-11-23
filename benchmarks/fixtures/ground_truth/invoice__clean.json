@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "seed": 20261112,
+  "id": "invoice",
+  "variant": "clean",
+  "title": "Invoice arithmetic",
+  "category": "table",
+  "pages": [
+    "CROSSHATCH LABS | INVOICE\nInvoice ID: INV-37617\nIssued: 2026-11-12\nCustomer: Westbridge Research\nSubtotal USD: 674.70\nVAT code: VX-279\nVAT 20% USD: 134.94\nTOTAL USD: 809.64\nItem Qty Unit USD Line USD\nPrecision Bearing 12 18.75 225.00\nMotor Controller 3 149.90 449.70\nSYNTHETIC BENCHMARK / NOT A REAL DOCUMENT\n1/1"
+  ],
+  "fields": {
+    "invoice_id": "INV-37617",
+    "subtotal": "674.70",
+    "vat": "134.94",
+    "total": "809.64"
+  },
+  "tables": [
+    {
+      "page": 1,
+      "rows": [
+        [
+          "Item",
+          "Qty",
+          "Unit USD",
+          "Line USD"
+        ],
+        [
+          "Precision Bearing",
+          "12",
+          "18.75",
+          "225.00"
+        ],
+        [
+          "Motor Controller",
+          "3",
+          "149.90",
+          "449.70"
+        ]
+      ]
+    }
+  ],
+  "summary_facts": [
+    "INV-37617",
+    "809.64"
+  ],
+  "pdf": "pdf/invoice__clean.pdf",
+  "sha256": "f67026d245c2225b907cc7a206fa184f18df500398005112bd22a639c269c3a6",
+  "has_text_layer": true,
+  "noise": "none"
+}

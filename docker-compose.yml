@@ -1,0 +1,213 @@
+# Keep Docker-managed stdout/stderr logs bounded per container.
+# Local rotation uses a bounded size and file count.
+x-log-rotation: &log-rotation
+  driver: json-file
+  options:
+    max-size: "20m"
+    max-file: "5"
+
+# PDF originals live in RustFS on the named disk volume; Redis holds no PDFs.
+# The RustFS volume persists across ordinary restarts. `docker compose down -v`
+# is the ONLY command that explicitly removes all stored objects.
+services:
+  frontend:
+    logging: *log-rotation
+    mem_limit: 2g
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        VITE_GRAFANA_URL: ${GRAFANA_PUBLIC_URL-http://127.0.0.1:3101}
+        VITE_GRAFANA_TEMPO_UID: ${GRAFANA_TEMPO_DATASOURCE_UID-tempo}
+    ports:
+      - "127.0.0.1:3000:80"
+    depends_on:
+      api:
+        condition: service_started
+    restart: unless-stopped
+
+  redis:
+    logging: *log-rotation
+    mem_limit: 2g
+    image: redis:7.4-alpine
+    command:
+      - redis-server
+      - --appendonly
+      - "no"
+      - --save
+      - ""
+      - --maxmemory
+      - 1536mb
+      - --maxmemory-policy
+      - noeviction
+    tmpfs:
+      - /data:size=134217728,mode=0700
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  # The upstream RustFS image runs with UID 10001. Initialize permissions once
+  # when Docker creates the disk-backed named volume (no persistent helper).
+  rustfs-permissions:
+    logging: *log-rotation
+    image: alpine:3.21
+    # Narrow exception: root only initializes a Docker-managed *named volume*,
+    # never a host project bind mount; no network; CHOWN is the sole capability.
+    # Only the volume root is initialized; RustFS owns all subsequent objects.
+    user: "0:0"
+    network_mode: "none"
+    read_only: true
+    cap_drop: ["ALL"]
+    cap_add: ["CHOWN"]
+    security_opt: ["no-new-privileges:true"]
+    command: ["sh", "-ec", "chown 10001:10001 /data /coordination"]
+    volumes:
+      - rustfs_data:/data
+      - archive_coordination:/coordination
+    restart: "no"
+
+  rustfs:
+    logging: *log-rotation
+    mem_limit: 2g
+    image: rustfs/rustfs:1.0.3
+    environment:
+      RUSTFS_VOLUMES: /data
+      RUSTFS_ADDRESS: 0.0.0.0:9000
+      RUSTFS_CONSOLE_ADDRESS: 0.0.0.0:9001
+      RUSTFS_CONSOLE_ENABLE: "true"
+      RUSTFS_ACCESS_KEY: ${S3_ACCESS_KEY:-pdfprocessor}
+      RUSTFS_SECRET_KEY: ${S3_SECRET_KEY:-local-demo-secret-change-me}
+    volumes:
+      - rustfs_data:/data
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    depends_on:
+      rustfs-permissions:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:9000/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    restart: unless-stopped
+
+  # Stage 1: local single-user development only. No published ports; only
+  # FastAPI joins the separate internal search network. Revisit auth/TLS before
+  # storing real archives or exposing the service beyond this trust boundary.
+  opensearch:
+    logging: *log-rotation
+    image: opensearchproject/opensearch:3.10.0
+    mem_limit: 2g
+    environment:
+      cluster.name: pdf-processor-search
+      node.name: pdf-processor-search-1
+      discovery.type: single-node
+      DISABLE_INSTALL_DEMO_CONFIG: "true"
+      DISABLE_SECURITY_PLUGIN: "true"
+      OPENSEARCH_JAVA_OPTS: "-Xms1g -Xmx1g"
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    security_opt: ["no-new-privileges:true"]
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+    networks:
+      - search_internal
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS 'http://127.0.0.1:9200/_cluster/health?wait_for_status=yellow&timeout=2s' | grep -Eq '\"timed_out\"[[:space:]]*:[[:space:]]*false'"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 60s
+    restart: unless-stopped
+
+
+  api:
+    logging: *log-rotation
+    mem_limit: 2g
+    user: "10001:10001"
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      S3_ENDPOINT_URL: http://rustfs:9000
+      UPLOAD_DIR: /tmp/pdf-uploads
+      ARCHIVE_COORDINATION_FILE: /coordination/archive.lock
+      OPENSEARCH_URL: http://opensearch:9200
+      OTEL_SERVICE_NAME: pdf-processor-api
+    volumes:
+      - archive_coordination:/coordination
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - default
+      - search_internal
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      redis:
+        condition: service_healthy
+      rustfs:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Each container supervises WORKER_THREADS independent consumers.
+  worker:
+    logging: *log-rotation
+    scale: 2
+    mem_limit: 4g
+    user: "10001:10001"
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    command: ["python", "-m", "app.worker"]
+    stop_grace_period: 180s
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      S3_ENDPOINT_URL: http://rustfs:9000
+      UPLOAD_DIR: /tmp/pdf-uploads
+      ARCHIVE_COORDINATION_FILE: /coordination/archive.lock
+      OPENSEARCH_URL: http://opensearch:9200
+      OTEL_SERVICE_NAME: pdf-processor-worker
+    volumes:
+      - archive_coordination:/coordination
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - default
+      - search_internal
+    depends_on:
+      redis:
+        condition: service_healthy
+      rustfs:
+        condition: service_healthy
+      api:
+        condition: service_started
+    restart: unless-stopped
+
+volumes:
+  rustfs_data:
+  opensearch_data:
+  archive_coordination:
+
+networks:
+  search_internal:
+    internal: true

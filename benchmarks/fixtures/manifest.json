@@ -1,0 +1,336 @@
+{
+  "schema_version": 1,
+  "seed": 20261112,
+  "generator": "benchmarks.generate",
+  "variants": [
+    "clean",
+    "scan",
+    "hard"
+  ],
+  "documents": [
+    {
+      "id": "letter",
+      "variant": "clean",
+      "pdf": "pdf/letter__clean.pdf",
+      "truth": "ground_truth/letter__clean.json",
+      "sha256": "f70393923f111a57b6e03294f2dc3ad8df2c4c1f05b058826ef6e410dd9d4c38",
+      "pages": 1,
+      "category": "plain"
+    },
+    {
+      "id": "letter",
+      "variant": "scan",
+      "pdf": "pdf/letter__scan.pdf",
+      "truth": "ground_truth/letter__scan.json",
+      "sha256": "3e37549c696379759189a77b11a2737823a6cd5258146af371d3f974e8430aff",
+      "pages": 1,
+      "category": "plain"
+    },
+    {
+      "id": "letter",
+      "variant": "hard",
+      "pdf": "pdf/letter__hard.pdf",
+      "truth": "ground_truth/letter__hard.json",
+      "sha256": "a75274968da7ffd8b64aea8b121884af0c0583b1277a012b9c1aa52884cf4d31",
+      "pages": 1,
+      "category": "plain"
+    },
+    {
+      "id": "invoice",
+      "variant": "clean",
+      "pdf": "pdf/invoice__clean.pdf",
+      "truth": "ground_truth/invoice__clean.json",
+      "sha256": "f67026d245c2225b907cc7a206fa184f18df500398005112bd22a639c269c3a6",
+      "pages": 1,
+      "category": "table"
+    },
+    {
+      "id": "invoice",
+      "variant": "scan",
+      "pdf": "pdf/invoice__scan.pdf",
+      "truth": "ground_truth/invoice__scan.json",
+      "sha256": "14842d079711394ea86699606fe11e2bd3fe697ef64df282e01da9f56c908fe6",
+      "pages": 1,
+      "category": "table"
+    },
+    {
+      "id": "invoice",
+      "variant": "hard",
+      "pdf": "pdf/invoice__hard.pdf",
+      "truth": "ground_truth/invoice__hard.json",
+      "sha256": "0c089081e8c85d633e609c4d5af1fd7b2aac45266415ccc381f36fe311814711",
+      "pages": 1,
+      "category": "table"
+    },
+    {
+      "id": "quarterly",
+      "variant": "clean",
+      "pdf": "pdf/quarterly__clean.pdf",
+      "truth": "ground_truth/quarterly__clean.json",
+      "sha256": "29f247102bf0c7c4a2e3ea86135d419c5d5c111f6c3666fc9dc8eb526c58d914",
+      "pages": 1,
+      "category": "table"
+    },
+    {
+      "id": "quarterly",
+      "variant": "scan",
+      "pdf": "pdf/quarterly__scan.pdf",
+      "truth": "ground_truth/quarterly__scan.json",
+      "sha256": "5bf1a5885ec1643106c316e838fda584eed292bbea60c9966a3081feb5e773c6",
+      "pages": 1,
+      "category": "table"
+    },
+    {
+      "id": "quarterly",
+      "variant": "hard",
+      "pdf": "pdf/quarterly__hard.pdf",
+      "truth": "ground_truth/quarterly__hard.json",
+      "sha256": "96ff9b1796f25f7c0ca27a566c2f5ff68512713e0ee5141df06704baac7a797c",
+      "pages": 1,
+      "category": "table"
+    },
+    {
+      "id": "newsletter",
+      "variant": "clean",
+      "pdf": "pdf/newsletter__clean.pdf",
+      "truth": "ground_truth/newsletter__clean.json",
+      "sha256": "d6a08c7e37396d1deaf89a171f6d416b95e4ca8c8f48d1a921b4ef3559e2654d",
+      "pages": 1,
+      "category": "reading_order"
+    },
+    {
+      "id": "newsletter",
+      "variant": "scan",
+      "pdf": "pdf/newsletter__scan.pdf",
+      "truth": "ground_truth/newsletter__scan.json",
+      "sha256": "b32604a9f0ca91e5586398ac59da17c6721f8266d1a2ce7498005e179ad55688",
+      "pages": 1,
+      "category": "reading_order"
+    },
+    {
+      "id": "newsletter",
+      "variant": "hard",
+      "pdf": "pdf/newsletter__hard.pdf",
+      "truth": "ground_truth/newsletter__hard.json",
+      "sha256": "857e59aa97cec89f0dd90478d208762b68423f03d41774c01c21d2b3e96d6fdf",
+      "pages": 1,
+      "category": "reading_order"
+    },
+    {
+      "id": "inventory",
+      "variant": "clean",
+      "pdf": "pdf/inventory__clean.pdf",
+      "truth": "ground_truth/inventory__clean.json",
+      "sha256": "68b07f8d5d884392efeb06d277d7c8f2340eb9d5b54eb9a6818db8e92716e502",
+      "pages": 3,
+      "category": "table"
+    },
+    {
+      "id": "inventory",
+      "variant": "scan",
+      "pdf": "pdf/inventory__scan.pdf",
+      "truth": "ground_truth/inventory__scan.json",
+      "sha256": "65fc24bc0cb3a5e9dec209061f64bdd7972846718c5c8be564057fb6e6b8e300",
+      "pages": 3,
+      "category": "table"
+    },
+    {
+      "id": "inventory",
+      "variant": "hard",
+      "pdf": "pdf/inventory__hard.pdf",
+      "truth": "ground_truth/inventory__hard.json",
+      "sha256": "86a40dbb38d0c13e62434d039cc281db150b4a5712d2c4c7226de7b7ab0141b5",
+      "pages": 3,
+      "category": "table"
+    },
+    {
+      "id": "lowres",
+      "variant": "clean",
+      "pdf": "pdf/lowres__clean.pdf",
+      "truth": "ground_truth/lowres__clean.json",
+      "sha256": "29eef17eb7ce379e0da2bb84223f198bda05448381fdc5f96d9f87525d1ecb4c",
+      "pages": 1,
+      "category": "scan"
+    },
+    {
+      "id": "lowres",
+      "variant": "scan",
+      "pdf": "pdf/lowres__scan.pdf",
+      "truth": "ground_truth/lowres__scan.json",
+      "sha256": "ebd38af8ffc23afc4ad10d762d315a05d34bf6c181c3002a0ee9d4485957981f",
+      "pages": 1,
+      "category": "scan"
+    },
+    {
+      "id": "lowres",
+      "variant": "hard",
+      "pdf": "pdf/lowres__hard.pdf",
+      "truth": "ground_truth/lowres__hard.json",
+      "sha256": "6456b7012004ec18acb79d6766d0dd508a8ffe597b4cda50b7f30d76b5da5657",
+      "pages": 1,
+      "category": "scan"
+    },
+    {
+      "id": "skew",
+      "variant": "clean",
+      "pdf": "pdf/skew__clean.pdf",
+      "truth": "ground_truth/skew__clean.json",
+      "sha256": "bef9b06daec3d2840ca41b0b14116ff5f2e65cee8c2c5357fc9036e0e6d34511",
+      "pages": 1,
+      "category": "scan"
+    },
+    {
+      "id": "skew",
+      "variant": "scan",
+      "pdf": "pdf/skew__scan.pdf",
+      "truth": "ground_truth/skew__scan.json",
+      "sha256": "d2b4125cdf7f2ddb52c454dc092d0fda433bb756f3993000ce5f5d5bf3b7a54f",
+      "pages": 1,
+      "category": "scan"
+    },
+    {
+      "id": "skew",
+      "variant": "hard",
+      "pdf": "pdf/skew__hard.pdf",
+      "truth": "ground_truth/skew__hard.json",
+      "sha256": "9e10cbc572e2960299b82037f8263bff94d8e2a5a55f3b88a9355ba06751e7c5",
+      "pages": 1,
+      "category": "scan"
+    },
+    {
+      "id": "receipt",
+      "variant": "clean",
+      "pdf": "pdf/receipt__clean.pdf",
+      "truth": "ground_truth/receipt__clean.json",
+      "sha256": "7aebb69cfd3e6faec4eb8df3eb69ac51c8dacd8c2c5e4fff3d4f2f277a37e446",
+      "pages": 1,
+      "category": "scan"
+    },
+    {
+      "id": "receipt",
+      "variant": "scan",
+      "pdf": "pdf/receipt__scan.pdf",
+      "truth": "ground_truth/receipt__scan.json",
+      "sha256": "21e70ddabf3be4b2c179f3166d1537c367802d86f4ad01535de145aa47c39c7a",
+      "pages": 1,
+      "category": "scan"
+    },
+    {
+      "id": "receipt",
+      "variant": "hard",
+      "pdf": "pdf/receipt__hard.pdf",
+      "truth": "ground_truth/receipt__hard.json",
+      "sha256": "5e4a07869161b189327da1df6c50410f0bcfb74fcfca1e13f73531ee62bcffa2",
+      "pages": 1,
+      "category": "scan"
+    },
+    {
+      "id": "bilingual",
+      "variant": "clean",
+      "pdf": "pdf/bilingual__clean.pdf",
+      "truth": "ground_truth/bilingual__clean.json",
+      "sha256": "ade34c85e6a199665f32a580f11243b7b5a6bb910e4e9dadfbac3355dd0dd929",
+      "pages": 1,
+      "category": "multilingual"
+    },
+    {
+      "id": "bilingual",
+      "variant": "scan",
+      "pdf": "pdf/bilingual__scan.pdf",
+      "truth": "ground_truth/bilingual__scan.json",
+      "sha256": "1acabb85870b734274beb23fcd17eacca6b0386f603413ebe9bbc89fc68b1a3e",
+      "pages": 1,
+      "category": "multilingual"
+    },
+    {
+      "id": "bilingual",
+      "variant": "hard",
+      "pdf": "pdf/bilingual__hard.pdf",
+      "truth": "ground_truth/bilingual__hard.json",
+      "sha256": "dc9f77d94b6311029e04a95906c56152843d9b3ae9f4f9aebc000657ab483d37",
+      "pages": 1,
+      "category": "multilingual"
+    },
+    {
+      "id": "serial",
+      "variant": "clean",
+      "pdf": "pdf/serial__clean.pdf",
+      "truth": "ground_truth/serial__clean.json",
+      "sha256": "4b56c59a56b497d3924d5445d6d4ab415cee1d0649b6838ea07343d4140c4f62",
+      "pages": 1,
+      "category": "exact_id"
+    },
+    {
+      "id": "serial",
+      "variant": "scan",
+      "pdf": "pdf/serial__scan.pdf",
+      "truth": "ground_truth/serial__scan.json",
+      "sha256": "c69776c038d801d8727cfbf03c622c560cb303924350bd59daf192470b1929bf",
+      "pages": 1,
+      "category": "exact_id"
+    },
+    {
+      "id": "serial",
+      "variant": "hard",
+      "pdf": "pdf/serial__hard.pdf",
+      "truth": "ground_truth/serial__hard.json",
+      "sha256": "48ae5483c319eb773159a4a8eac07783bbadd8a777f853fc4c34a4d5a4a5dac6",
+      "pages": 1,
+      "category": "exact_id"
+    },
+    {
+      "id": "injection",
+      "variant": "clean",
+      "pdf": "pdf/injection__clean.pdf",
+      "truth": "ground_truth/injection__clean.json",
+      "sha256": "c7d154810593138e066823d597cb93e646fa20ce55890cfe2f8cd4b2ff040fb1",
+      "pages": 1,
+      "category": "injection"
+    },
+    {
+      "id": "injection",
+      "variant": "scan",
+      "pdf": "pdf/injection__scan.pdf",
+      "truth": "ground_truth/injection__scan.json",
+      "sha256": "02c49ae1556235f68517bf6aaff1e72c5781a1908a63b5d0731997cb9ac75824",
+      "pages": 1,
+      "category": "injection"
+    },
+    {
+      "id": "injection",
+      "variant": "hard",
+      "pdf": "pdf/injection__hard.pdf",
+      "truth": "ground_truth/injection__hard.json",
+      "sha256": "d599d1be8b07bc491a53e3ae64222abee3a58dfca14d9db234e15f90ffebaf1e",
+      "pages": 1,
+      "category": "injection"
+    },
+    {
+      "id": "project",
+      "variant": "clean",
+      "pdf": "pdf/project__clean.pdf",
+      "truth": "ground_truth/project__clean.json",
+      "sha256": "67c08f48407dd9c3588c491ebc9aa100c3a7a1d5eadb65a1d9e64adaa920ccc9",
+      "pages": 2,
+      "category": "summary"
+    },
+    {
+      "id": "project",
+      "variant": "scan",
+      "pdf": "pdf/project__scan.pdf",
+      "truth": "ground_truth/project__scan.json",
+      "sha256": "9814dad27b03a088a47bdad9d24900b12a68d6fcd7f1ed292ff622bb2ff40c1c",
+      "pages": 2,
+      "category": "summary"
+    },
+    {
+      "id": "project",
+      "variant": "hard",
+      "pdf": "pdf/project__hard.pdf",
+      "truth": "ground_truth/project__hard.json",
+      "sha256": "b2e2fd8df2fe9589799b71618a78c400b196067302b61ccd1adf67f212599f4e",
+      "pages": 2,
+      "category": "summary"
+    }
+  ]
+}

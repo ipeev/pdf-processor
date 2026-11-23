@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "seed": 20261112,
+  "id": "newsletter",
+  "variant": "scan",
+  "title": "Two-column newsletter",
+  "category": "reading_order",
+  "pages": [
+    "CITY SCIENCE WEEKLY\nLEFT COLUMN\nThe observatory recorded 42 clear nights.\nA new telescope began service in September.\nVisitors attended 17 evening sessions.\nFootnote A: counts exclude school groups.\nRIGHT COLUMN\nResearchers identified three new targets.\nThe next public lecture is on 21 November.\nA workshop will cover optical calibration.\nFootnote B: registration opens on Monday.\nSYNTHETIC BENCHMARK / NOT A REAL DOCUMENT\n1/1"
+  ],
+  "fields": {
+    "clear_nights": "42",
+    "sessions": "17",
+    "targets": "three"
+  },
+  "tables": [],
+  "summary_facts": [],
+  "pdf": "pdf/newsletter__scan.pdf",
+  "sha256": "b32604a9f0ca91e5586398ac59da17c6721f8266d1a2ce7498005e179ad55688",
+  "has_text_layer": false,
+  "noise": "196dpi raster, mild skew"
+}

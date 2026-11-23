@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "seed": 20261112,
+  "id": "letter",
+  "variant": "hard",
+  "title": "Business letter",
+  "category": "plain",
+  "pages": [
+    "BLUE ORCHID | CUSTOMER LETTER\nReference: BO-37617\nDate: 12 November 2026\nDear Operations Team,\nYour shipment of 18 sensor kits is scheduled for Friday.\nThe warehouse confirmed delivery to Gate C at 09:30.\nPlease acknowledge the revised packing list.\nSincerely, M. Turner\nSYNTHETIC BENCHMARK / NOT A REAL DOCUMENT\n1/1"
+  ],
+  "fields": {
+    "reference": "BO-37617",
+    "quantity": "18",
+    "time": "09:30"
+  },
+  "tables": [],
+  "summary_facts": [
+    "18 sensor kits",
+    "Gate C",
+    "09:30"
+  ],
+  "pdf": "pdf/letter__hard.pdf",
+  "sha256": "a75274968da7ffd8b64aea8b121884af0c0583b1277a012b9c1aa52884cf4d31",
+  "has_text_layer": false,
+  "noise": "108dpi raster, JPEG compression, blur, low contrast, seeded grain"
+}

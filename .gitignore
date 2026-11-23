@@ -1,0 +1,37 @@
+.env
+.env.*
+!.env.example
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+node_modules/
+dist/
+coverage/
+.coverage
+*.egg-info/
+uploads/
+*.part
+.DS_Store
+
+# Keep backend/uv.lock in version control; exclude only uv virtual environments.
+# (No uv.lock ignore rule.)
+
+# Local acceptance-test reports (may contain internal document IDs).
+reports/
+
+# Local release-check reports
+test-results/
+
+# Reproducible synthetic benchmark results, including potentially billed model output.
+/benchmarks/results/*
+!/benchmarks/results/.gitkeep
+
+# Never accidentally stage local credentials or signing material.
+*.pem
+*.p12
+*.pfx
+id_rsa
+id_ed25519
