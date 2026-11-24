@@ -34,7 +34,7 @@ class DocumentProcessor:
                 "vision_figures": VisionFiguresParser(llm, settings)} if llm else {}),
         }
 
-    async def extract(self, parser: str, path: Path, *, page_response=None):
+    async def extract(self, parser: str, path: Path, *, page_response=None, on_progress=None):
         adapter = self.parsers.get(parser)
         if adapter is None:
             raise ProcessingError("UNAVAILABLE_PARSER", "Selected parser is not available.")
@@ -42,9 +42,12 @@ class DocumentProcessor:
             if parser == "pypdf":
                 result = await asyncio.to_thread(adapter.parse, path)
             elif parser == "vision_figures":
-                result = await adapter.parse(path, page_response=page_response)
+                extra = {'page_response': page_response}
+                if on_progress is not None:
+                    extra['on_progress'] = on_progress
+                result = await adapter.parse(path, **extra)
             else:
-                result = await adapter.parse(path)
+                result = await adapter.parse(path, on_progress=on_progress) if on_progress is not None else await adapter.parse(path)
         if parser == "vision_figures":
             result.as_parsed_document().validate()
         else:
@@ -65,6 +68,18 @@ class DocumentProcessor:
         if parsed is None:
             if not path.is_file():
                 raise ProcessingError("SOURCE_FILE_MISSING", "PDF source file is not accessible.")
-            parsed = await self.extract(parser, path)
+            async def progress(page, pages_total, attempt=1, max_attempts=1):
+                try:
+                    await self.repo.set_page_progress(doc_id, page, pages_total,
+                        owner_token=owner_token, attempt=attempt, max_attempts=max_attempts)
+                except ProcessingError as exc:
+                    if exc.code == 'JOB_LEASE_LOST':
+                        raise
+                    # Progress reporting must not invalidate already-paid extraction.
+                    pass
+                except Exception:
+                    # Redis can be temporarily unavailable while model calls continue.
+                    pass
+            parsed = await self.extract(parser, path, on_progress=progress)
             await self.repo.store_extracted(doc_id, parsed, owner_token=owner_token)
         await self.summarize_saved(doc_id, owner_token=owner_token)

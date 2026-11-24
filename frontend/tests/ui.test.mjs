@@ -89,7 +89,7 @@ test('math-aware preview renders inline and display LaTeX without unsafe HTML', 
 
 test('math dependency tree uses patched KaTeX and prevents older transitive copies', () => {
   const manifest = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'))
-  assert.equal(manifest.version, '0.12.3')
+  assert.equal(manifest.version, '0.12.6')
   assert.equal(manifest.dependencies['remark-math'], '^6.0.0')
   assert.equal(manifest.dependencies['rehype-katex'], '^7.0.1')
   assert.equal(manifest.dependencies.katex, '^0.18.11')

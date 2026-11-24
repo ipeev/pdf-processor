@@ -50,13 +50,15 @@ class NativePDFParser:
         self.client, self.settings = client, settings
         self.page_cache = page_cache
 
-    async def parse(self, path: Path) -> ParsedDocument:
+    async def parse(self, path: Path, *, on_progress=None) -> ParsedDocument:
         reader = await asyncio.to_thread(safe_reader, path, self.settings.max_pages_per_document)
         if len(reader.pages) > self.settings.max_ai_pages_per_document:
             raise ProcessingError("AI_PAGE_LIMIT_EXCEEDED", f"This PDF has {len(reader.pages)} pages; "
                                   f"the configured AI extraction limit is {self.settings.max_ai_pages_per_document} pages.")
         parsed = []
         for index, page in enumerate(reader.pages, start=1):
+            if on_progress is not None:
+                await on_progress(index, len(reader.pages), 1, 1)
             if is_objectively_blank(page):
                 parsed.append(ParsedPage(index, ""))
                 continue

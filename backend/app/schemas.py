@@ -41,12 +41,21 @@ class SafeError(BaseModel):
     diagnostic: dict[str, str | int] | None = None
 
 
+class PageProgress(BaseModel):
+    """Ephemeral extraction progress, not a completion percentage."""
+    page: int = Field(ge=1)
+    pages_total: int = Field(ge=1)
+    attempt: int = Field(default=1, ge=1)
+    max_attempts: int = Field(default=1, ge=1, le=3)
+
+
 class DocumentStatus(BaseModel):
     id: UUID
     filename: str
     parser: ParserChoice
     status: JobState
     page_count: int | None = None
+    page_progress: PageProgress | None = None
     summary: str | None = None
     cache: str = "miss"
     trace_id: str | None = None

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# v0.12.3: offline figure gate (default), or ONE explicitly paid end-to-end smoke.
+# v0.12.6: offline figure gate (default), or ONE explicitly paid end-to-end smoke.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 mode="${1:---offline}"
@@ -9,9 +9,9 @@ if [[ $# -gt 1 || "$mode" != --offline && "$mode" != --paid-live ]]; then
 fi
 mkdir -p test-results
 stamp="$(date +%Y%m%d-%H%M%S)"
-log="test-results/v0.12.3-figures-${mode#--}-${stamp}.log"
+log="test-results/v0.12.6-figures-${mode#--}-${stamp}.log"
 if [[ "$mode" == --offline ]]; then
-  echo 'v0.12.3: required REAL RustFS, Redis and OpenSearch figure integration; saved model replies; no paid calls.'
+  echo 'v0.12.6: required REAL RustFS, Redis and OpenSearch figure integration; saved model replies; no paid calls.'
   set +e
   docker compose exec -T api uv run --locked --extra test pytest -q \
     -m pipeline_integration -rs tests/test_figures_release.py 2>&1 | tee "$log"

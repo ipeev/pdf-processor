@@ -21,7 +21,7 @@ class ImageOCRParser:
         self.client, self.settings = client, settings
         self.page_cache = page_cache
 
-    async def parse(self, path: Path) -> ParsedDocument:
+    async def parse(self, path: Path, *, on_progress=None) -> ParsedDocument:
         # Check count/encryption with pypdf before opening rasterizer; no model calls yet.
         reader = await asyncio.to_thread(safe_reader, path, self.settings.max_pages_per_document)
         count = len(reader.pages)
@@ -37,6 +37,8 @@ class ImageOCRParser:
                 raise ProcessingError("INVALID_PDF", "PDF page count changed unexpectedly.")
             pages: list[ParsedPage] = []
             for index in range(count):
+                if on_progress is not None:
+                    await on_progress(index + 1, count, 1, 1)
                 try:
                     image = await asyncio.to_thread(render_one_page, pdf, index, self.settings)
                 except ProcessingError as exc:

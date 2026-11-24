@@ -101,11 +101,12 @@ jobs:
         # restart recovery, fixture-backed figures and an npm test/build stage.
         run: ./scripts/test_release.sh --offline
 
-      - name: Focused v0.12.3 regression verification
+      - name: Focused cache, vision, page-progress and search regression verification
         env:
           RUN_LIVE_TESTS: '0'
           OPENROUTER_API_KEY: ''
-        # Forces the uncached frontend Docker build; catches missing COPY paths.
+        # Forces an uncached frontend Docker build and focused offline Python regressions.
+        # All provider calls are mocked; no OpenRouter API key is available.
         run: ./scripts/check_regressions.sh
 
       - name: Show logs after failure (synthetic CI fixtures only)

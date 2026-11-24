@@ -1,4 +1,4 @@
-# Configuration — PDF Processor 0.12.3
+# Configuration — PDF Processor 0.12.6
 
 Copy `.env.example` to `.env` and edit the local file; it is ignored by Git. Never commit real keys or environment dumps. `scripts/setup.sh` preserves an existing `.env`. Docker Compose overrides selected internal service URLs regardless of the values in `.env`.
 
@@ -11,6 +11,8 @@ Copy `.env.example` to `.env` and edit the local file; it is ignored by Git. Nev
 | `NATIVE_PDF_MODEL` | Model for `gemini` parser compatibility ID |
 | `IMAGE_OCR_MODEL` | Model for `gpt5_mini` parser compatibility ID |
 | `VISION_FIGURES_MODEL` | Full-page Markdown + image-box model for `vision_figures` |
+| `VISION_FIGURES_PAGE_ATTEMPTS` | Up to 3 attempts for clearly rejected page responses; unknown-outcome calls are not repeated automatically |
+| `VISION_LOG_INVALID_RESPONSE` | **Off by default**. Log the complete rejected `message.content` and, for live responses, the full OpenRouter HTTP response in worker logs. **Contains document text**; use briefly and turn off. |
 | `SUMMARY_MODEL` | Summary generation model, including after local `pypdf` extraction |
 | `OPENROUTER_TIMEOUT_SECONDS` | Request timeout |
 | `OPENROUTER_MAX_CALL_ATTEMPTS` | Configured per-call attempt limit; not a guarantee of duplicate-free billing |

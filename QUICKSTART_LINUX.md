@@ -1,4 +1,4 @@
-# Installation and local operation — PDF Processor 0.12.3
+# Installation and local operation — PDF Processor 0.12.6
 
 ## Prerequisites
 
@@ -17,7 +17,7 @@ For persistence across reboots, set that sysctl through your distribution's syst
 ## First install
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/pdf-processor.git # substitute the repository address
+git clone https://github.com/ipeev/pdf-processor.git
 cd pdf-processor
 cp .env.example .env
 chmod 600 .env
@@ -67,7 +67,7 @@ docker compose down
 | Frontend fails to build | `docker compose build --no-cache frontend` and `frontend/tests/parser_contract.test.mjs`; the builder must copy `backend/app/schemas.py` |
 | API or workers not ready | `docker compose ps`; inspect `api`, `worker`, `redis`, `rustfs` logs |
 | PDF job cannot summarize | `.env` must provide an authorized OpenRouter key and available model; check sanitized diagnostics |
-| Search seems stale | Inspect RustFS health and OpenSearch; rebuild projections with `docker compose exec -T api python -m app.catalogue_cli rebuild` |
+| Search seems stale or missing words | Search **All extractions**, then rebuild the passage index with `docker compose exec -T api python -m app.search_cli rebuild` while the queue is idle. The catalogue rebuild does not rebuild full-text passages |
 | Missing figures in export | Verify run is complete or partial with committed extraction; inspect the figure manifest and relevant page output |
 
 For environment settings see [Configuration](docs/CONFIGURATION.md). For recovery operations see [Operations](docs/OPERATIONS.md).

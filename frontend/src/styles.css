@@ -435,3 +435,26 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .catalogue-danger { color: #fda4af; border-color: #9f5361; }
 .catalogue-danger:hover:not(:disabled) { background: rgba(190, 50, 75, .16); }
 .catalogue-delete .notice { max-width: 24rem; white-space: normal; font-size: .85rem; }
+
+/* Full-text search. Keep excerpts text-only, even when extracted PDFs contain HTML. */
+.search-form {display:grid;gap:11px}
+.search-form > label {font-size:12px;font-weight:700;color:#d8e5f7}
+.search-input-row {display:flex;gap:12px}
+.search-input-row input {min-width:0;flex:1;border:1px solid #40526e;border-radius:9px;background:#101a2c;color:#edf5ff;padding:12px 15px;font:inherit;font-size:15px}
+.search-input-row .catalogue-primary {border:0;cursor:pointer}
+.search-filters {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:12px}
+.search-filters label {display:grid;gap:6px;color:#a7bad2;font-size:12px}
+.search-filters select {width:100%;background:#162338;border:1px solid #394e69;border-radius:8px;color:#dce9f9;padding:9px 8px;font:inherit}
+.search-result {border:1px solid #33455f;border-radius:12px;background:#172237;padding:22px;margin:16px 0;overflow-wrap:anywhere}
+.search-result-heading {display:flex;align-items:start;justify-content:space-between;gap:12px}
+.search-result-heading h2 {font-size:18px;margin:0 0 9px}
+.search-result-heading a {color:#9de6df}
+.search-result-heading p {font-size:11px;color:#8ca3bf;margin:0 0 16px}
+.search-matches {padding:0;list-style:none;display:grid;gap:10px}
+.search-matches li {padding:12px;background:#0e1c2d;border:1px solid #2f4058;border-radius:9px}
+.search-match-meta {display:flex;flex-wrap:wrap;gap:14px;align-items:center;font-size:11px;color:#88acb8;font-weight:650;margin-bottom:8px}
+.search-match-meta a {margin-left:auto;color:#8ce9d7;text-decoration:underline}
+.search-snippet {font-size:12px;color:#c5d5e6;line-height:1.8;white-space:pre-wrap;overflow-wrap:anywhere}
+.search-snippet mark {background:#b6e5b5;color:#19272a;padding:0 2px;border-radius:2px}
+.search-result > button {margin:6px 9px 0 0}
+@media(max-width:760px){.search-filters{grid-template-columns:repeat(2,minmax(0,1fr))}.search-result-heading{display:block}.search-input-row{flex-wrap:wrap}.search-input-row input{flex-basis:100%}}

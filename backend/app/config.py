@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     # Fourth upload parser: persistent figures and Markdown.
     vision_figures_model: str = "anthropic/claude-haiku-5.5"
     vision_figures_max_tokens_per_page: int = Field(16000, ge=1024, le=32768)
+    vision_figures_page_attempts: int = Field(3, ge=1, le=3)
+    # Explicit opt-in: invalid model replies may contain confidential PDF text.
+    vision_log_invalid_response: bool = False
     max_vision_figures_pages_per_document: int = Field(50, ge=1, le=200)
     max_vision_figures_per_page: int = Field(8, ge=0, le=30)
     max_vision_asset_bytes: int = Field(6_000_000, ge=1024, le=20_000_000)

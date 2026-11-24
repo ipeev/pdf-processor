@@ -67,3 +67,12 @@ async def test_pdf_no_api_fallback(settings, sample_basic):
             raise ProcessingError("PROVIDER_UNAVAILABLE", "Simulated upstream outage")
     with pytest.raises(ProcessingError, match="PROVIDER_UNAVAILABLE"):
         await GeminiPDFParser(FailingGemini(), settings).parse(sample_basic)
+
+
+@pytest.mark.asyncio
+async def test_native_pdf_reports_each_page_including_blanks(settings, sample_blank):
+    reported = []
+    async def report(page, total, attempt, maximum):
+        reported.append((page, total, attempt, maximum))
+    await GeminiPDFParser(FakeGemini(), settings).parse(sample_blank, on_progress=report)
+    assert reported == [(1, 3, 1, 1), (2, 3, 1, 1), (3, 3, 1, 1)]

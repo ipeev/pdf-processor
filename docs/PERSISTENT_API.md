@@ -1,4 +1,4 @@
-# HTTP API and persisted resources — PDF Processor 0.12.3
+# HTTP API and persisted resources — PDF Processor 0.12.6
 
 The FastAPI route prefix is `/api/v1`. The browser reaches it through the frontend's same-origin `/api/*` proxy on port 3000; it can also be accessed on localhost port 8000. **There is no application authentication.** Keep the service inside a trusted security boundary.
 
@@ -47,6 +47,15 @@ Upload limits in the example configuration are five PDFs or one ZIP with at most
 | `DELETE` | `/library/{document_id}` | Cascade delete document, original and runs; requires `If-Match: "<revision>"` |
 
 Document metadata includes display name/aliases, SHA-256, size, preferred run, timestamps and revision. Run metadata includes run ID, document ID, parser, status/cache, models, trace ID, costs/tokens when known, artifacts and error diagnostics. Sensitive internal storage paths, raw provider bodies, and worker lease tokens are not part of the public contract.
+
+## Passage-level full-text search
+
+| Method | Path | Behavior |
+|---|---|---|
+| `POST` | `/search` | Bounded BM25 query, collapses matches by canonical PDF; returns top matching passages and `has_more` |
+| `POST` | `/search/{document_id}/matches` | Paged matching passages within one PDF, with page, parser and run navigation |
+
+Both routes accept a JSON body containing `query` (2–200 characters), `match` (`all` / `any` / `phrase`), `scope` (`preferred` / `all`), optional `parser`, `sort` (`relevance` / `newest`), `offset` (0–2000) and `limit` (1–20). No raw OpenSearch DSL is allowed. Search is an offline derived index, not an OpenRouter request. `total_documents: null` means the grouped document count is not asserted; `matching_passages` counts matching index passages, not distinct pages. Snippets are untrusted PDF text and must be rendered as plain text and explicit highlight spans, never raw HTML. Read the [full API example and index model](FULL_TEXT_SEARCH.md).
 
 ## Filtering and paging
 

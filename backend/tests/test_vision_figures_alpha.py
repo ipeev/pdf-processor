@@ -169,7 +169,8 @@ async def test_invalid_page2_stops_processing():
     with pytest.raises(ProcessingError) as err:
         await VisionFiguresParser(fake,settings()).parse(ROOT/'sample_figures.pdf')
     assert err.value.code=='VISION_RESPONSE_INVALID'
-    assert len(fake.calls)==2
+    assert [p for p, *_ in fake.calls] == [1, 2, 2, 2]
+    assert err.value.diagnostic['attempt'] == 3
     assert err.value.diagnostic['page']==2
 
 
@@ -238,7 +239,7 @@ def test_fourth_parser_is_enabled_with_atomic_images():
     source = (Path(app.__file__).parent / 'document_processor.py').read_text()
     assert 'VisionFiguresParser' in source
     source = (Path(app.__file__).parent / 'persistent_pipeline.py').read_text()
-    assert 'durable_vision_response' in source and 'figures.json' in source
+    assert 'durable_vision_page' in source and 'figures.json' in source
 
 
 def test_marker_mid_sentence_is_relocated_before_single_caption():

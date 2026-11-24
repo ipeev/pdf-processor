@@ -22,7 +22,7 @@ docker compose exec -T api uv run --locked --extra test python --version
 docker compose exec -T api uv run --locked --extra test python -c 'import sys; assert sys.version_info[:3] == (3, 15, 2), sys.version'
 docker compose exec -T worker python -c 'import sys; assert sys.version_info[:3] == (3, 15, 2), sys.version'
 docker compose exec -T api uv lock --check
-printf '\n=== v0.12.3: bundled lockfile integrity ===\n'
+printf '\n=== v0.12.6: bundled lockfile integrity ===\n'
 docker compose exec -T api python /app/scripts/check_release_candidate.py
 printf '\n=== Docker image project layout ===\n'
 if ! docker compose exec -T api sh -c \
@@ -158,6 +158,17 @@ if ! grep -Eq '[1-9][0-9]* passed' <<< "$CATALOGUE_REPORT" || grep -Eq '[1-9][0-
   echo 'FAIL: real catalogue integration must execute and pass.' >&2
   exit 1
 fi
+printf '\n=== v0.12.6: required real OpenSearch BM25 passage search (no paid calls) ===\n'
+if ! SEARCH_REPORT="$(docker compose exec -T api uv run --locked --extra test pytest -q -m opensearch_integration tests/test_fulltext_search_integration.py -rs 2>&1)"; then
+  printf '%s\n' "$SEARCH_REPORT"
+  echo 'FAIL: real full-text search integration failed.' >&2
+  exit 1
+fi
+printf '%s\n' "$SEARCH_REPORT"
+if ! grep -Eq '[1-9][0-9]* passed' <<< "$SEARCH_REPORT" || grep -Eq '[1-9][0-9]* skipped' <<< "$SEARCH_REPORT"; then
+  echo 'FAIL: real BM25 and document-collapse tests must execute and pass.' >&2
+  exit 1
+fi
 printf '\n=== Stage 4: real persistent pipeline (mocked AI, no skips accepted) ===\n'
 if ! PIPELINE_REPORT="$(docker compose exec -T api uv run --locked --extra test pytest -q -m pipeline_integration tests/test_persistent_pipeline.py -rs 2>&1)"; then
   printf '%s\n' "$PIPELINE_REPORT"
@@ -231,7 +242,7 @@ printf '\n=== RustFS temporary and permanent objects survive restart ===\n'
 ./scripts/check_storage_restart.sh
 printf '\n=== OpenSearch integration and restart persistence ===\n'
 ./scripts/check_opensearch.sh --restart
-printf '\n=== v0.12.3: REQUIRED live-service vision-figures gate (saved OpenRouter fixtures; NO PAID CALLS) ===\n'
+printf '\n=== v0.12.6: REQUIRED live-service vision-figures gate (saved OpenRouter fixtures; NO PAID CALLS) ===\n'
 ./scripts/check_figures.sh --offline
 printf '\n=== React frontend + same-origin FastAPI proxy ===\n'
 ./scripts/check_frontend.sh

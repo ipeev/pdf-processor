@@ -1,4 +1,4 @@
-# Potential roadmap — post-0.12.3
+# Potential roadmap — post-0.12.6
 
 This roadmap lists **possible future improvements**, not features in the current release or committed delivery dates. The current baseline and limitations are described in [project overview](../project_overview.md). Prior prototype/phase plans are intentionally not retained in the public documentation.
 
@@ -12,7 +12,14 @@ This roadmap lists **possible future improvements**, not features in the current
 - Detect incomplete or truncated full-page AI responses more reliably; communicate uncertainty rather than silently claiming complete text.
 - Explore table-image fallbacks only where text extraction genuinely fails, with explicit output semantics.
 
-## 2. Production security / accessibility
+## 2. Search quality and retrieval enhancements
+
+- Hybrid lexical/vector retrieval, embeddings, semantic similarity and optional question-answering over verified passages (not included in the current version).
+- Atomic passage-index generation swaps and automated consistency reconciliation under concurrent uploads and preferred-run changes.
+- Better paragraph/table/math segmentation, distinct-page counts, persistent search bookmarks and query-expansion evaluations on synthetic datasets.
+- Document-aware relevance tuning, duplicate passage clustering within a PDF, and quality measures for cross-parser OCR discrepancies.
+
+## 3. Production security / accessibility
 
 **Goal:** define a deployable trust boundary for users beyond a trusted localhost machine.
 
@@ -23,7 +30,7 @@ This roadmap lists **possible future improvements**, not features in the current
 
 **Current status:** not implemented. Do not expose this release publicly.
 
-## 3. Operations and scaling
+## 4. Operations and scaling
 
 - Documented disaster-recovery rehearsals with validated restore integrity and backup retention.
 - Safer multi-host/distributed coordination replacing local `flock`, with a clear migration design.
@@ -31,7 +38,7 @@ This roadmap lists **possible future improvements**, not features in the current
 - Observability installation examples and reliable diagnostics that do not leak document contents.
 - CI expansion for security, realistic performance, and image fidelity using free, synthetic fixtures.
 
-## 4. Developer experience
+## 5. Developer experience
 
 - More portable deployment templates after securing the runtime boundary.
 - Expand schema-backed API examples, OpenAPI documentation, and client-generation tests.
