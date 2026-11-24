@@ -7,6 +7,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from redis.asyncio import Redis
 
+from app.version import APPLICATION_VERSION
 from app.api import router
 from app.library_api import router as library_router
 from app.search_api import router as search_router
@@ -84,7 +85,7 @@ async def lifespan(app: FastAPI):
         shutdown_telemetry()
 
 
-app = FastAPI(title="Async PDF Processor", version="0.12.8", lifespan=lifespan)
+app = FastAPI(title="Async PDF Processor", version=APPLICATION_VERSION, lifespan=lifespan)
 app.include_router(router)
 app.include_router(library_router)
 app.include_router(search_router)

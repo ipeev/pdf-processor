@@ -1,7 +1,7 @@
 {
   "name": "pdf-processor-frontend",
   "private": true,
-  "version": "0.12.8",
+  "version": "0.12.11",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
@@ -9,7 +9,7 @@
     "test": "node --experimental-strip-types --test tests/*.test.mjs"
   },
   "dependencies": {
-    "katex": "^0.18.11",
+    "katex": "^0.19.1",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-markdown": "^10.1.0",
@@ -21,9 +21,9 @@
     "@types/node": "^22.15.30",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
-    "@vitejs/plugin-react": "^5.0.0",
+    "@vitejs/plugin-react": "^6.3.0",
     "typescript": "^5.9.2",
-    "vite": "^7.1.0"
+    "vite": "^8.3.8"
   },
   "overrides": {
     "katex": "$katex"

@@ -130,8 +130,8 @@ def test_version_surface_and_frontend_fourth_choice():
     path=Path(__file__).resolve().parents[2]
     import tomllib
     import json
-    assert tomllib.loads((path/'backend/pyproject.toml').read_text())['project']['version']=='0.12.8'
-    assert json.loads((path/'frontend/package.json').read_text())['version']=='0.12.8'
+    backend_version = tomllib.loads((path/'backend/pyproject.toml').read_text())['project']['version']
+    assert json.loads((path/'frontend/package.json').read_text())['version']==backend_version
     assert 'disabled: true' not in (path/'frontend/src/ui.ts').read_text().split("id: 'vision_figures'")[1].split('\n')[0]
 
 @pytest.mark.asyncio

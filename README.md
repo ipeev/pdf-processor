@@ -2,7 +2,9 @@
 
 **Self-hosted PDF → Markdown processing, AI OCR, figure extraction, and persistent document search.**
 
-**Version 0.12.8 · MIT License · Docker Compose · Linux**
+**MIT License · Docker Compose · Linux**
+
+Current version: see [`backend/pyproject.toml`](backend/pyproject.toml).
 
 PDF Processor provides a React interface for PDF and ZIP uploads, asynchronous extraction, AI-generated summaries, searchable History and Document Library, **full-text search across extracted pages**, and downloadable results. The **AI OCR + Pictures** parser extracts page text and figures using vision model requests per page (with bounded retries for invalid replies), creates PNG crops from the source PDF, displays them alongside Markdown, and exports portable bundles.
 
@@ -44,7 +46,7 @@ flowchart LR
 
 ## Quick start (Linux)
 
-Requirements: Docker Engine with Compose v2, Bash, internet for first build, sufficient memory/disk for the services, and host `vm.max_map_count >= 262144` for OpenSearch. Docker images provide Python 3.15.2 and Node 22; no host installation is needed.
+Requirements: Docker Engine with Compose v2, Bash, internet for first build, sufficient memory/disk for the services, and host `vm.max_map_count >= 262144` for OpenSearch. Docker images provide Python 3.15.2 and Node 26; no host installation is needed.
 
 ```bash
 # In a clone of this repository:
@@ -83,7 +85,7 @@ Do not re-upload or reprocess documents merely to make them searchable. OpenSear
 ./scripts/check_figures.sh --offline
 ./scripts/check_regressions.sh
 
-# Optional: frontend-only (Node 22 and npm):
+# Optional: frontend-only (Node 26 and npm):
 cd frontend && npm ci && npm test && npm run build
 ```
 
@@ -106,15 +108,18 @@ This is **best-effort extraction**. Bounding boxes and caption placement can be 
 | [Linux setup](QUICKSTART_LINUX.md) | Installation, safe upgrade, and troubleshooting |
 | [Configuration](docs/CONFIGURATION.md) | Environment variables and resource/AI limits |
 | [Live page progress](docs/PAGE_PROGRESS.md) | Current page number, retries and status polling during extraction |
-| [Vision response diagnostics](docs/VISION_RESPONSE_DIAGNOSTICS.md) | Inspect rejected LLM output, temporary full-response logs and historical attempt replay |
+| [Vision response diagnostics](docs/VISION_RESPONSE_DIAGNOSTICS.md) | Inspect rejected LLM output, opt-in full-response diagnostics and archived retry-attempt inspection |
 | [API](docs/PERSISTENT_API.md) | Upload, runs, library, full-text search, images and consistency contracts |
 | [Full-text search](docs/FULL_TEXT_SEARCH.md) | Passage index, BM25 ranking, grouping, backfill and safe operations |
 | [Operations](docs/OPERATIONS.md) | Backup/restore, recovery, search rebuild, deletion, monitoring |
 | [Offline testing and CI](docs/CI_AND_TESTING.md) | GitHub workflows, free test coverage, what is not tested |
 | [Roadmap](docs/ROADMAP.md) | Potential future improvements (not promises) |
 | [Security](SECURITY.md) | Deployment boundary and vulnerability reporting |
-| [Contributing](CONTRIBUTING.md) | Development, test, and PR guidelines |
+| [Dependency versions](docs/DEPENDENCY_UPGRADES.md) | Current locked components, verification, and update policy |
+| [Contributing](CONTRIBUTING.md) | Testing, contribution, and pull-request guidelines |
 
 ## License and contributing
 
 Licensed under the [MIT License](LICENSE). Issues and pull requests are welcome; please read [CONTRIBUTING.md](CONTRIBUTING.md). Before publishing, follow the [GitHub checklist](docs/PUBLISHING_GITHUB.md) and verify that all bundled third-party materials and synthetic PDF fixtures are redistributable.
+
+The application version is defined in [`backend/pyproject.toml`](backend/pyproject.toml); [`scripts/sync_release_version.py`](scripts/sync_release_version.py) keeps the required package and Docker metadata synchronized. Exact dependency versions are recorded in the committed Python and npm lockfiles.

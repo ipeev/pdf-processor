@@ -1,4 +1,4 @@
-# Full-text search — PDF Processor 0.12.8
+# Full-text search — PDF Processor
 
 The **Search** navigation page provides lexical full-text retrieval over **previously extracted PDF pages**. It uses OpenSearch BM25 and requires **no OpenRouter key** for indexing or querying. Image contents that were not converted to text are not searchable. This is not semantic/embedding search.
 

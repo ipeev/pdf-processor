@@ -17,7 +17,7 @@ def test_lock_provenance_and_exact_versions():
 
 
 def test_release_checker_distinguishes_source_checkout_from_minimal_image(tmp_path):
-    """The runtime image has locked metadata but never public docs or .github."""
+    """Runtime metadata validation does not depend on source docs or workflows."""
     import shutil
     import sys
     for rel in ('scripts/check_release_candidate.py', 'backend/pyproject.toml',
@@ -75,11 +75,11 @@ def test_runtime_metadata_mismatch_reports_observed_version(tmp_path):
         dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(ROOT / rel, dst)
     project = tmp_path / 'backend/pyproject.toml'
-    project.write_text(project.read_text().replace('version = "0.12.8"', 'version = "0.12.7"'))
+    project.write_text(project.read_text().replace('version = "' + __import__('tomllib').loads(project.read_text())['project']['version'] + '"', 'version = "0.0.0"'))
     check = subprocess.run([sys.executable, str(tmp_path / 'scripts/check_release_candidate.py'), '--runtime-only'],
                            capture_output=True, text=True)
     assert check.returncode != 0
-    assert "found version='0.12.7'" in check.stderr
+    assert "found version='0.0.0'" in check.stderr
     assert 'running Docker image' in check.stderr
 
 
@@ -150,3 +150,37 @@ def test_rc_shell_syntax_and_lifetime_scope():
                      'scripts/verify.sh','scripts/test_release.sh'):
         script = ROOT / relative
         subprocess.run(['bash','-n',str(script)],check=True)
+
+
+def test_single_release_version_source_and_runtime_api():
+    import tomllib
+    import sys
+    from app.version import APPLICATION_VERSION
+    from app.main import app
+    expected = tomllib.loads((ROOT / 'backend/pyproject.toml').read_text())['project']['version']
+    assert APPLICATION_VERSION == expected
+    assert app.version == expected
+    result = subprocess.run([sys.executable, str(ROOT / 'scripts/sync_release_version.py'), '--check'],
+                            capture_output=True, text=True)
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_version_sync_can_repair_a_stale_generated_manifest(tmp_path):
+    import shutil
+    import sys
+    for rel in ('scripts/sync_release_version.py', 'backend/pyproject.toml', 'backend/uv.lock',
+                'frontend/package.json', 'frontend/package-lock.json', 'docker-compose.yml'):
+        dst = tmp_path / rel
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(ROOT / rel, dst)
+    npm = tmp_path / 'frontend/package.json'
+    npm.write_text(npm.read_text().replace('"version": "' +
+        __import__('tomllib').loads((tmp_path/'backend/pyproject.toml').read_text())['project']['version'] + '"',
+        '"version": "0.0.0"', 1))
+    tool = str(tmp_path / 'scripts/sync_release_version.py')
+    check = subprocess.run([sys.executable, tool, '--check'], capture_output=True, text=True)
+    assert check.returncode != 0 and 'stale' in check.stderr
+    repair = subprocess.run([sys.executable, tool, '--write'], capture_output=True, text=True)
+    assert repair.returncode == 0, repair.stderr
+    check = subprocess.run([sys.executable, tool, '--check'], capture_output=True, text=True)
+    assert check.returncode == 0, check.stderr

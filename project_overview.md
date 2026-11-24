@@ -1,12 +1,12 @@
 # Project overview — current system
 
-**PDF Processor 0.12.8** is a self-hosted document-processing application built on FastAPI, React, Redis Streams, S3-compatible RustFS, OpenSearch, and Docker Compose. This document describes **the implemented system as shipped**, not its development history. The source of truth for exact behavior remains the application code and executable tests.
+**PDF Processor** is a self-hosted document-processing application built on FastAPI, React, Redis Streams, S3-compatible RustFS, OpenSearch, and Docker Compose. It covers supported workflows, component responsibilities, and the limits of the installed system. The source of truth for exact behavior remains the application code and executable tests.
 
 ## Intended use and supported environment
 
 - A trusted Linux machine with Docker Engine / Docker Compose v2; single-user/local-network workflow, no authentication or TLS termination included.
 - Two worker containers by default, each supervising `WORKER_THREADS=20` consumers, with bounded CPU-independent container memory limits. Exposed HTTP and RustFS ports bind to `127.0.0.1`.
-- Python 3.15.2 API/workers (locked through `backend/uv.lock`) and Node 22 React/Vite frontend (locked through `frontend/package-lock.json`).
+- Python 3.15.2 API/workers (locked through `backend/uv.lock`) and Node 26 React/Vite frontend (locked through `frontend/package-lock.json`).
 - OpenRouter credentials are optional for boot and offline testing, but required for real summarization and model-dependent extraction. Models and limits are set via `.env`.
 - Synthetic fixtures and mocked provider calls are used in CI. This is not a multi-tenant, authenticated, or production-hardened hosted service.
 
@@ -28,7 +28,7 @@
 | RustFS `pdf-documents` bucket | Original bytes, per-document metadata, immutable run generations, extracted pages, summaries, figure manifests and PNGs | **Authoritative** on a Docker named volume; requires backup |
 | RustFS temporary upload bucket | Pending upload objects, with configurable short expiration | Temporary |
 | Redis | Queued/claimed jobs, cache entries, heartbeat and transient status | **Volatile**; restarts may discard in-memory state |
-| OpenSearch | Searchable document/run projections for History and Library | Rebuildable from canonical RustFS manifests |
+| OpenSearch | Searchable document/run projections and full-text passage indexes for History, Library and Search | Rebuildable from canonical RustFS manifests and page artifacts |
 | `archive_coordination` volume | Local cross-container advisory lock for archive maintenance | Single-host coordination, not a distributed security system |
 | OpenRouter | External extraction and summary service for configured AI stages | Not part of the self-hosted stack; inference is billable |
 

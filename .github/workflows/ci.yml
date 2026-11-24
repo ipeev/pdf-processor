@@ -33,16 +33,17 @@ jobs:
         run: |
           python3 --version
           python3 scripts/check_publication.py
+          python3 scripts/sync_release_version.py --check
           python3 scripts/check_release_candidate.py
           python3 -m compileall -q backend/app scripts
           find scripts -type f -name '*.sh' -print0 | xargs -0 -r bash -n
           # Compose validation checks ports/networks without starting services.
           docker compose config -q
 
-      - name: Set up Node.js 22
+      - name: Set up Node.js 26
         uses: actions/setup-node@v7
         with:
-          node-version: '22'
+          node-version: '26'
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 

@@ -6,6 +6,7 @@ A superseded worker may leave unreachable objects, but cannot replace a
 committed result. Index publication is retried from the manifest before ACK.
 """
 from __future__ import annotations
+from app.version import APPLICATION_VERSION
 import asyncio
 import json
 import logging
@@ -49,7 +50,7 @@ class PersistentPipeline:
         trace_id, upload_id = current_ids()
         run = RunManifest(run_id=item.id, document_id=original.document_id,
             filename=item.filename, parser=item.parser, upload_id=UUID(upload_id) if upload_id else None,
-            trace_id=trace_id or None, pipeline_version=PROMPT_VERSION, application_version='0.12.8',
+            trace_id=trace_id or None, pipeline_version=PROMPT_VERSION, application_version=APPLICATION_VERSION,
             extraction_model={'gemini': self.settings.native_pdf_model, 'gpt5_mini': self.settings.image_ocr_model, 'vision_figures': self.settings.vision_figures_model}.get(item.parser.value),
             summary_model=self.settings.summary_model, processing_fingerprint=digest,
             s3_prefix=f'{original.document_id}/runs/{item.id}/')

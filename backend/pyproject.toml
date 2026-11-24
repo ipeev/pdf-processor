@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "async-pdf-processor"
-version = "0.12.8"
+version = "0.12.11"
 description = "Async PDF processing with FastAPI, Redis Streams, OpenRouter"
 requires-python = ">=3.15,<3.16"
 dependencies = [
@@ -12,8 +12,8 @@ dependencies = [
     "uvicorn[standard]>=0.30,<1",
     "python-multipart>=0.0.9,<1",
     "pydantic-settings>=2.5,<3",
-    "redis>=5,<7",
-    "pypdf>=5,<7",
+    "redis==8.1.0",
+    "pypdf==7.1.1",
     "httpx>=0.27,<1",
     "boto3>=1.35,<2",
     "pypdfium2>=4.28,<6",
@@ -27,7 +27,7 @@ dependencies = [
 test = [
     "pytest>=8,<10",
     "pytest-asyncio>=0.23,<2",
-    "reportlab>=4,<5",
+    "reportlab==5.1.0",
 ]
 
 [tool.setuptools.packages.find]

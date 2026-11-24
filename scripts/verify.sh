@@ -3,6 +3,7 @@
 # --live: model contract probes; --quick: one end-to-end PDF; --full: all samples.
 set -euo pipefail
 cd "$(dirname "$0")/.."
+RELEASE_VERSION="$(awk -F '"' '/^version = / {print $2; exit}' backend/pyproject.toml)"
 
 LIVE=0
 WORKFLOW=''
@@ -15,7 +16,7 @@ for arg in "$@"; do
   esac
 done
 # Validate release metadata, docs and workflow in the complete source checkout.
-# README/docs/.github are deliberately excluded from backend runtime images.
+# README/docs are omitted from runtime images; the CI workflow is copied for contract tests.
 printf '\n=== Full source release and documentation consistency ===\n'
 python3 scripts/check_release_candidate.py
 ./scripts/setup.sh --no-prompt
@@ -26,7 +27,7 @@ docker compose exec -T api uv run --locked --extra test python --version
 docker compose exec -T api uv run --locked --extra test python -c 'import sys; assert sys.version_info[:3] == (3, 15, 2), sys.version'
 docker compose exec -T worker python -c 'import sys; assert sys.version_info[:3] == (3, 15, 2), sys.version'
 docker compose exec -T api uv lock --check
-printf '\n=== v0.12.8: bundled lockfile integrity ===\n'
+printf '\n=== v%s: bundled lockfile integrity ===\n' "$RELEASE_VERSION"
 docker compose exec -T api python /app/scripts/check_release_candidate.py --runtime-only
 printf '\n=== Docker image project layout ===\n'
 if ! docker compose exec -T api sh -c \
@@ -162,7 +163,7 @@ if ! grep -Eq '[1-9][0-9]* passed' <<< "$CATALOGUE_REPORT" || grep -Eq '[1-9][0-
   echo 'FAIL: real catalogue integration must execute and pass.' >&2
   exit 1
 fi
-printf '\n=== v0.12.8: required real OpenSearch BM25 passage search (no paid calls) ===\n'
+printf '\n=== v%s: required real OpenSearch BM25 passage search (no paid calls) ===\n' "$RELEASE_VERSION"
 if ! SEARCH_REPORT="$(docker compose exec -T api uv run --locked --extra test pytest -q -m opensearch_integration tests/test_fulltext_search_integration.py -rs 2>&1)"; then
   printf '%s\n' "$SEARCH_REPORT"
   echo 'FAIL: real full-text search integration failed.' >&2
@@ -246,7 +247,7 @@ printf '\n=== RustFS temporary and permanent objects survive restart ===\n'
 ./scripts/check_storage_restart.sh
 printf '\n=== OpenSearch integration and restart persistence ===\n'
 ./scripts/check_opensearch.sh --restart
-printf '\n=== v0.12.8: REQUIRED live-service vision-figures gate (saved OpenRouter fixtures; NO PAID CALLS) ===\n'
+printf '\n=== v%s: REQUIRED live-service vision-figures gate (saved OpenRouter fixtures; NO PAID CALLS) ===\n' "$RELEASE_VERSION"
 ./scripts/check_figures.sh --offline
 printf '\n=== React frontend + same-origin FastAPI proxy ===\n'
 ./scripts/check_frontend.sh

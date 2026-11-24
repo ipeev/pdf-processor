@@ -60,7 +60,7 @@ PUBLIC_DOCS = {
     'docs/CONFIGURATION.md', 'docs/CONTAINER_SECURITY.md',
     'docs/OPENROUTER_KEY_TELEMETRY.md', 'docs/OPERATIONS.md',
     'docs/PERSISTENT_API.md', 'docs/FULL_TEXT_SEARCH.md', 'docs/VISION_RESPONSE_DIAGNOSTICS.md', 'docs/PUBLISHING_GITHUB.md',
-    'docs/ROADMAP.md', 'docs/PAGE_PROGRESS.md',
+    'docs/ROADMAP.md', 'docs/PAGE_PROGRESS.md', 'docs/DEPENDENCY_UPGRADES.md',
 }
 for rel in PUBLIC_DOCS:
     if not (ROOT / rel).is_file():

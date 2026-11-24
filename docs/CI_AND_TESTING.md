@@ -1,4 +1,4 @@
-# CI, offline tests, and acceptance — PDF Processor 0.12.8
+# CI, offline tests, and acceptance — PDF Processor
 
 All required GitHub Actions run **without `OPENROUTER_API_KEY`**, without external inference requests, and without paid test accounts. AI output is simulated using deterministic fixtures and mocked provider responses. Real Redis, RustFS and OpenSearch integration coverage runs inside Docker.
 
@@ -44,9 +44,9 @@ npm test
 npm run build
 ```
 
-The backend production image uses Python 3.15.2 and `uv sync --locked`; frontend uses Node 22 and `npm ci`. Locked Python and npm dependencies are committed and checked on each CI run.
+The backend production image uses Python 3.15.2 and `uv sync --locked`; frontend uses Node 26 and `npm ci`. Locked Python and npm dependencies are committed and checked on each CI run.
 
-**Regression gates:** besides the full backend test suite, the focused regression script reruns tests for vision-page caching/retries, full-response diagnostics, page progress, and the cache test doubles using the keyword-only `on_progress` callback. This catches interface drift without real OpenRouter calls.
+**Regression gates:** the focused regression script covers vision-page caching/retries, rejected-response diagnostics, page progress, and backend/frontend callback contracts. These checks run without real OpenRouter calls.
 
 ## What passing CI means—and does not mean
 

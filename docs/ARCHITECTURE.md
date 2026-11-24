@@ -1,4 +1,4 @@
-# Architecture — PDF Processor 0.12.8
+# Architecture — PDF Processor
 
 This document describes the **currently implemented** system. Diagrams use native GitHub Mermaid Markdown. It is a single-host, trusted-user Docker Compose architecture; it is not a public multi-tenant service.
 
@@ -36,7 +36,7 @@ flowchart TB
 
 `frontend` exposes 127.0.0.1:3000 and proxies `/api/*`. `api` exposes 127.0.0.1:8000. RustFS exposes 127.0.0.1:9000/9001. Redis has no host port. OpenSearch runs on an internal Compose network without a published port; its security plugin is disabled. API/workers run as UID 10001, with dropped capabilities and no privilege escalation. A one-shot constrained initializer prepares named volume ownership.
 
-The app currently uses Redis 7.4, RustFS 1.0.3, OpenSearch 3.10.0, Python 3.15.2 (backend), and Node 22/React 19 (frontend). Container and environment versions are defined by `docker-compose.yml` and the Dockerfiles.
+The app currently uses Redis 7.4, RustFS 1.0.3, OpenSearch 3.10.0, Python 3.15.2 (backend), and Node 26/React 19 (frontend). Container and environment versions are defined by `docker-compose.yml` and the Dockerfiles.
 
 ## Upload, processing, and result lifecycle
 

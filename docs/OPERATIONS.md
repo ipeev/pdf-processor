@@ -1,4 +1,4 @@
-# Operations, recovery and monitoring — PDF Processor 0.12.8
+# Operations, recovery and monitoring — PDF Processor
 
 All commands run from the repository root on a **trusted, idle Linux deployment**. This project is single-host/localhost only. Operations may affect Redis or maintenance locks; test backup/restore on disposable infrastructure first.
 

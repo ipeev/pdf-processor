@@ -1,4 +1,4 @@
-# Installation and local operation — PDF Processor 0.12.8
+# Installation and local operation — PDF Processor
 
 ## Prerequisites
 
@@ -12,7 +12,7 @@ cat /proc/sys/vm/max_map_count
 sudo sysctl -w vm.max_map_count=262144
 ```
 
-For persistence across reboots, set that sysctl through your distribution's system configuration. Docker handles Python 3.15.2 / Node 22 inside images.
+For persistence across reboots, set that sysctl through your distribution's system configuration. Docker handles Python 3.15.2 / Node 26 inside images.
 
 ## First install
 
