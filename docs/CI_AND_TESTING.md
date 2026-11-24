@@ -1,4 +1,4 @@
-# CI, offline tests, and acceptance — PDF Processor 0.12.6
+# CI, offline tests, and acceptance — PDF Processor 0.12.7
 
 All required GitHub Actions run **without `OPENROUTER_API_KEY`**, without external inference requests, and without paid test accounts. AI output is simulated using deterministic fixtures and mocked provider responses. Real Redis, RustFS and OpenSearch integration coverage runs inside Docker.
 
@@ -26,6 +26,8 @@ python3 -m compileall -q backend/app scripts
 ./scripts/check_figures.sh --offline
 ./scripts/check_regressions.sh
 ```
+
+`check_release_candidate.py` validates lockfiles **and** public documentation and CI references in the complete source checkout. The full release gate runs that check before starting Docker; inside the minimal Python image, it runs `check_release_candidate.py --runtime-only` to validate the same lockfile/manifests without expecting README, docs or GitHub Actions files in the runtime image. CI also runs the complete-source check independently in the source job. A missing source document still fails the release gate.
 
 `test_release.sh --offline` is the comprehensive release gate. `check_figures.sh --offline` exercises the figure pipeline against real infrastructure and saved model responses. `check_regressions.sh` forces an uncached frontend Docker build and runs focused caption/figure Python tests. This catches incorrect `COPY` paths or frontend/backend parser-contract drift. Offline suites include extensive synthetic unit, API, security, cache and archive-recovery cases.
 

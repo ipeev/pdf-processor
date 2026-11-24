@@ -1,4 +1,4 @@
-# Configuration — PDF Processor 0.12.6
+# Configuration — PDF Processor 0.12.7
 
 Copy `.env.example` to `.env` and edit the local file; it is ignored by Git. Never commit real keys or environment dumps. `scripts/setup.sh` preserves an existing `.env`. Docker Compose overrides selected internal service URLs regardless of the values in `.env`.
 

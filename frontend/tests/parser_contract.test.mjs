@@ -13,7 +13,7 @@ const run = {
   run_id:id, document_id:digest, filename:'YOLOv3.pdf', parser:'vision_figures', status:'completed',
   cache:'miss', page_count:6, created_at:stamp, updated_at:stamp, duration_ms:22000,
   extraction_model:'anthropic/claude-haiku-5.5', summary_model:'summary-model',
-  application_version:'0.12.6', cost_usd:0.004, has_extraction:true, has_summary:true,
+  application_version:'0.12.7', cost_usd:0.004, has_extraction:true, has_summary:true,
 }
 
 test('backend Python parser enumeration stays identical to frontend choices and shared runtime guard', () => {

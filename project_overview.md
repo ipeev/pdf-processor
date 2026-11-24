@@ -1,6 +1,6 @@
 # Project overview — current system
 
-**PDF Processor 0.12.6** is a self-hosted document-processing application built on FastAPI, React, Redis Streams, S3-compatible RustFS, OpenSearch, and Docker Compose. This document describes **the implemented system as shipped**, not its development history. The source of truth for exact behavior remains the application code and executable tests.
+**PDF Processor 0.12.7** is a self-hosted document-processing application built on FastAPI, React, Redis Streams, S3-compatible RustFS, OpenSearch, and Docker Compose. This document describes **the implemented system as shipped**, not its development history. The source of truth for exact behavior remains the application code and executable tests.
 
 ## Intended use and supported environment
 

@@ -2,7 +2,7 @@
 
 **Self-hosted PDF → Markdown processing, AI OCR, figure extraction, and persistent document search.**
 
-**Version 0.12.6 · MIT License · Docker Compose · Linux**
+**Version 0.12.7 · MIT License · Docker Compose · Linux**
 
 PDF Processor provides a React interface for PDF and ZIP uploads, asynchronous extraction, AI-generated summaries, searchable History and Document Library, **full-text search across extracted pages**, and downloadable results. The **AI OCR + Pictures** parser extracts page text and figures using vision model requests per page (with bounded retries for invalid replies), creates PNG crops from the source PDF, displays them alongside Markdown, and exports portable bundles.
 

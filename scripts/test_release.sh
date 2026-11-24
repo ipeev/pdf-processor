@@ -13,8 +13,8 @@ esac
 if [[ "$#" -gt 1 ]]; then echo 'Too many arguments.' >&2; exit 2; fi
 mkdir -p test-results
 stamp="$(date +%Y%m%d-%H%M%S)"
-logfile="test-results/v0.12.6-${stamp}.log"
-printf 'PDF Processor v0.12.6 verification | mode: %s\n' "$MODE"
+logfile="test-results/v0.12.7-${stamp}.log"
+printf 'PDF Processor v0.12.7 verification | mode: %s\n' "$MODE"
 printf 'Full log: %s\n' "$logfile"
 if [[ "$MODE" == full ]]; then
   printf 'Includes PAID OpenRouter calls across PyPDF, native-PDF AI and image OCR.\n'

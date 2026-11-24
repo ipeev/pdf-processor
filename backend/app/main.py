@@ -84,7 +84,7 @@ async def lifespan(app: FastAPI):
         shutdown_telemetry()
 
 
-app = FastAPI(title="Async PDF Processor", version="0.12.6", lifespan=lifespan)
+app = FastAPI(title="Async PDF Processor", version="0.12.7", lifespan=lifespan)
 app.include_router(router)
 app.include_router(library_router)
 app.include_router(search_router)

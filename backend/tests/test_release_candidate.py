@@ -10,10 +10,40 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def test_lock_provenance_and_exact_versions():
     import sys
-    result = subprocess.run([sys.executable, str(ROOT / 'scripts/check_release_candidate.py')],
+    result = subprocess.run([sys.executable, str(ROOT / 'scripts/check_release_candidate.py'), '--runtime-only'],
                             check=False, capture_output=True, text=True)
     assert result.returncode == 0, result.stdout + result.stderr
     assert 'no dependency resolution' in result.stdout
+
+
+def test_release_checker_distinguishes_source_checkout_from_minimal_image(tmp_path):
+    """The runtime image has locked metadata but never public docs or .github."""
+    import shutil
+    import sys
+    for rel in ('scripts/check_release_candidate.py', 'backend/pyproject.toml',
+                'backend/uv.lock', 'frontend/package.json',
+                'frontend/package-lock.json'):
+        dst = tmp_path / rel
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(ROOT / rel, dst)
+    tool = str(tmp_path / 'scripts/check_release_candidate.py')
+    runtime = subprocess.run([sys.executable, tool, '--runtime-only'],
+                             capture_output=True, text=True)
+    assert runtime.returncode == 0, runtime.stdout + runtime.stderr
+    assert 'runtime metadata' in runtime.stdout
+    # Full-source validation must not silently bypass missing documentation.
+    source = subprocess.run([sys.executable, tool], capture_output=True, text=True)
+    assert source.returncode != 0
+    assert 'missing public documentation: README.md' in source.stderr
+
+
+def test_verify_checks_checkout_before_image_and_image_uses_runtime_mode():
+    script = (ROOT / 'scripts/verify.sh').read_text()
+    source_check = 'python3 scripts/check_release_candidate.py'
+    startup = './scripts/setup.sh --no-prompt'
+    runtime_check = 'python /app/scripts/check_release_candidate.py --runtime-only'
+    assert script.index(source_check) < script.index(startup)
+    assert runtime_check in script
 
 
 def test_container_install_fails_closed_on_missing_locks():

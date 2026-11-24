@@ -110,7 +110,7 @@ if [[ -z "$backend_version" || -z "$backend_requires_python" || \
       "$backend_lock_version" != "$backend_version" || \
       "$backend_lock_requires_python" != "$backend_requires_python" ]]; then
   echo 'ERROR: backend/uv.lock is missing or stale; release installation will not re-resolve dependencies.' >&2
-  echo 'Use the complete v0.12.6 ZIP. For an intentional dependency update run scripts/lock_dependencies.sh and reverify.' >&2
+  echo 'Use the complete v0.12.7 ZIP. For an intentional dependency update run scripts/lock_dependencies.sh and reverify.' >&2
   exit 1
 fi
 frontend_version="$(grep -m1 '"version"' frontend/package.json | cut -d '"' -f4)"
@@ -120,7 +120,7 @@ if [[ -s frontend/package-lock.json ]]; then
 fi
 if [[ -z "$frontend_version" || "$frontend_lock_version" != "$frontend_version" ]]; then
   echo 'ERROR: frontend/package-lock.json missing or stale; release installation will not re-resolve dependencies.' >&2
-  echo 'Use the complete v0.12.6 ZIP. For an intentional dependency update run scripts/lock_frontend.sh and reverify.' >&2
+  echo 'Use the complete v0.12.7 ZIP. For an intentional dependency update run scripts/lock_frontend.sh and reverify.' >&2
   exit 1
 fi
 echo 'PASS: bundled Python and npm dependency lock versions match their manifests.'
