@@ -1,4 +1,4 @@
-# HTTP API and persisted resources — PDF Processor 0.12.7
+# HTTP API and persisted resources — PDF Processor 0.12.8
 
 The FastAPI route prefix is `/api/v1`. The browser reaches it through the frontend's same-origin `/api/*` proxy on port 3000; it can also be accessed on localhost port 8000. **There is no application authentication.** Keep the service inside a trusted security boundary.
 

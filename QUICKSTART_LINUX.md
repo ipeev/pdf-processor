@@ -1,4 +1,4 @@
-# Installation and local operation — PDF Processor 0.12.7
+# Installation and local operation — PDF Processor 0.12.8
 
 ## Prerequisites
 

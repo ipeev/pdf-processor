@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""v0.12.7 fourth-parser HTTP smoke: stdlib only; explicit paid upload.
+"""v0.12.8 fourth-parser HTTP smoke: stdlib only; explicit paid upload.
 
 No implicit retries, no API keys/document text in the emitted diagnostics.
 This probes real worker calls, archived PNGs, and portable ZIP bytes.
@@ -186,7 +186,7 @@ def main():
     ap.add_argument('--wait-seconds', type=int, default=600)
     ap.add_argument('--paid-live', action='store_true', help='Explicitly authorizes paid OpenRouter processing')
     args = ap.parse_args()
-    report = {'release': '0.12.7', 'mode': 'health-only', 'status': 'not_started', 'health': 'not_checked'}
+    report = {'release': '0.12.8', 'mode': 'health-only', 'status': 'not_started', 'health': 'not_checked'}
     try:
         run(args, report)
     except (SmokeFailure, AssertionError, KeyError, TypeError, ValueError) as exc:

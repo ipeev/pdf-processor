@@ -1,4 +1,4 @@
-# Publishing PDF Processor v0.12.7 on GitHub
+# Publishing PDF Processor v0.12.8 on GitHub
 
 This is a **public source release**, not a declaration that the self-hosted application is ready for untrusted internet traffic. The service has no built-in login or per-user authorization. See [SECURITY.md](../SECURITY.md).
 
@@ -34,7 +34,7 @@ git diff --stat
 git add -A
 git diff --cached --stat
 git diff --cached --check
-git commit -m "chore: document and validate v0.12.7 release"
+git commit -m "chore: document and validate v0.12.8 release"
 git push origin main
 ```
 
@@ -46,8 +46,8 @@ git push origin main
 Only after the checks pass, tag the **same verified commit** and publish a GitHub Release:
 
 ```bash
-git tag -a v0.12.7 -m "PDF Processor v0.12.7"
-git push origin v0.12.7
+git tag -a v0.12.8 -m "PDF Processor v0.12.8"
+git push origin v0.12.8
 ```
 
 The release notes should describe the current capabilities and limitations: document extraction, asynchronous processing, figure/OCR pipeline and its imperfect crops, page cache/retries/progress, searchable archives, and free offline CI. Do not claim live-provider correctness or public internet deployment readiness based solely on offline tests.

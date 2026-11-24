@@ -39,7 +39,7 @@ async def test_archive_status_exposes_progress_only_while_processing():
     run_id = uuid4()
     document_id = 'a' * 64
     manifest = RunManifest(run_id=run_id, document_id=document_id, filename='input.pdf',
-        parser='vision_figures', pipeline_version='test', application_version='0.12.7',
+        parser='vision_figures', pipeline_version='test', application_version='0.12.8',
         s3_prefix=f'{document_id}/runs/{run_id}/', status='processing')
     pipeline = PersistentPipeline(SimpleNamespace(), None, SimpleNamespace(archive=object()), repo)
     async def get(_): return manifest

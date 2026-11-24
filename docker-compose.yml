@@ -11,6 +11,8 @@ x-log-rotation: &log-rotation
 # is the ONLY command that explicitly removes all stored objects.
 services:
   frontend:
+    labels:
+      org.opencontainers.image.version: "0.12.8"
     logging: *log-rotation
     mem_limit: 2g
     build:
@@ -129,6 +131,8 @@ services:
 
 
   api:
+    labels:
+      org.opencontainers.image.version: "0.12.8"
     logging: *log-rotation
     mem_limit: 2g
     user: "10001:10001"
@@ -166,6 +170,8 @@ services:
 
   # Each container supervises WORKER_THREADS independent consumers.
   worker:
+    labels:
+      org.opencontainers.image.version: "0.12.8"
     logging: *log-rotation
     scale: 2
     mem_limit: 4g

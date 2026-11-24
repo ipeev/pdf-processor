@@ -1,4 +1,4 @@
-# CI, offline tests, and acceptance — PDF Processor 0.12.7
+# CI, offline tests, and acceptance — PDF Processor 0.12.8
 
 All required GitHub Actions run **without `OPENROUTER_API_KEY`**, without external inference requests, and without paid test accounts. AI output is simulated using deterministic fixtures and mocked provider responses. Real Redis, RustFS and OpenSearch integration coverage runs inside Docker.
 

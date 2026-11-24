@@ -110,7 +110,7 @@ if [[ -z "$backend_version" || -z "$backend_requires_python" || \
       "$backend_lock_version" != "$backend_version" || \
       "$backend_lock_requires_python" != "$backend_requires_python" ]]; then
   echo 'ERROR: backend/uv.lock is missing or stale; release installation will not re-resolve dependencies.' >&2
-  echo 'Use the complete v0.12.7 ZIP. For an intentional dependency update run scripts/lock_dependencies.sh and reverify.' >&2
+  echo 'Use the complete v0.12.8 ZIP. For an intentional dependency update run scripts/lock_dependencies.sh and reverify.' >&2
   exit 1
 fi
 frontend_version="$(grep -m1 '"version"' frontend/package.json | cut -d '"' -f4)"
@@ -120,7 +120,7 @@ if [[ -s frontend/package-lock.json ]]; then
 fi
 if [[ -z "$frontend_version" || "$frontend_lock_version" != "$frontend_version" ]]; then
   echo 'ERROR: frontend/package-lock.json missing or stale; release installation will not re-resolve dependencies.' >&2
-  echo 'Use the complete v0.12.7 ZIP. For an intentional dependency update run scripts/lock_frontend.sh and reverify.' >&2
+  echo 'Use the complete v0.12.8 ZIP. For an intentional dependency update run scripts/lock_frontend.sh and reverify.' >&2
   exit 1
 fi
 echo 'PASS: bundled Python and npm dependency lock versions match their manifests.'
@@ -130,7 +130,41 @@ echo 'Starting/updating the application (existing RustFS object volume is preser
 # the operator explicitly wants to discard the entire application state.
 echo 'Building and starting services...'
 docker compose up --build -d
-printf '\n=== Containers ===\n'
+# A successful image build alone does not prove that previously running
+# containers were recreated. Verify the live API and BOTH worker replicas.
+# The frontend only contains Nginx assets, so its Compose version label is
+# checked instead of trying to read backend Python metadata inside Nginx.
+for service in api worker frontend; do
+  ids="$(docker compose ps -q --status running "$service")"
+  if [[ -z "$ids" ]]; then
+    echo "ERROR: No running $service container found after upgrade." >&2
+    exit 1
+  fi
+  while IFS= read -r container_id; do
+    [[ -n "$container_id" ]] || continue
+    label_version="$(docker inspect --format '{{ index .Config.Labels "org.opencontainers.image.version" }}' "$container_id")"
+    if [[ "$label_version" != "$backend_version" ]]; then
+      echo "ERROR: Stale $service container $container_id: expected release label=$backend_version, found=$label_version." >&2
+      echo 'After active processing finishes, run: docker compose up -d --build --force-recreate api worker frontend' >&2
+      exit 1
+    fi
+    if [[ "$service" != frontend ]]; then
+      if ! running_version="$(docker exec "$container_id" python -c 'import tomllib; from pathlib import Path; print(tomllib.loads(Path("/app/backend/pyproject.toml").read_text())["project"]["version"])')"; then
+        echo "ERROR: Could not read the $service container $container_id application version." >&2
+        exit 1
+      fi
+      if [[ "$running_version" != "$backend_version" ]]; then
+        echo "ERROR: Stale $service container $container_id: source version=$backend_version, running version=$running_version." >&2
+        echo 'After active processing finishes, run: docker compose up -d --build --force-recreate api worker frontend' >&2
+        echo 'If the image is still stale, rebuild the application images with --no-cache.' >&2
+        echo 'Neither command removes the RustFS or OpenSearch named volumes.' >&2
+        exit 1
+      fi
+    fi
+  done <<< "$ids"
+done
+printf 'PASS: running API, workers and frontend identify release %s.\n' "$backend_version"
+printf '\n=== Containers ===\n' 
 docker compose ps
 printf '\n=== Waiting for API + Redis + RustFS ===\n'
 READY=0

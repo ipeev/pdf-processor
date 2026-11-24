@@ -1,4 +1,4 @@
-# Architecture — PDF Processor 0.12.7
+# Architecture — PDF Processor 0.12.8
 
 This document describes the **currently implemented** system. Diagrams use native GitHub Mermaid Markdown. It is a single-host, trusted-user Docker Compose architecture; it is not a public multi-tenant service.
 

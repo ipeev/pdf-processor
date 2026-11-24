@@ -1,4 +1,4 @@
-# Potential roadmap — post-0.12.7
+# Potential roadmap — post-0.12.8
 
 This roadmap lists **possible future improvements**, not features in the current release or committed delivery dates. The current baseline and limitations are described in [project overview](../project_overview.md). Prior prototype/phase plans are intentionally not retained in the public documentation.
 

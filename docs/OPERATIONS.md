@@ -1,4 +1,4 @@
-# Operations, recovery and monitoring — PDF Processor 0.12.7
+# Operations, recovery and monitoring — PDF Processor 0.12.8
 
 All commands run from the repository root on a **trusted, idle Linux deployment**. This project is single-host/localhost only. Operations may affect Redis or maintenance locks; test backup/restore on disposable infrastructure first.
 
@@ -83,3 +83,30 @@ Deletion is available through the app/API with correct run state, archive mainte
 ```
 
 These tests can restart and modify isolated service test state; use a disposable/idle stack. Do **not** accidentally run `test_release.sh` without `--offline`, as the default invokes paid tests. See [CI and testing](CI_AND_TESTING.md).
+
+## Release upgrades and stale containers
+
+Each application service (`api`, `worker`, `frontend`) carries a release label in
+`docker-compose.yml`. Compose uses changes in service configuration to recreate
+containers when the release changes. `scripts/setup.sh` additionally compares
+the running API and every worker project version against `backend/pyproject.toml`
+before continuing with acceptance tests.
+
+If an upgrade was interrupted or a container predates the source checkout,
+wait until active document processing completes, then run:
+
+```sh
+docker compose up -d --build --force-recreate api worker frontend
+```
+
+If the version check still reports an old image after a forced container
+recreation, rebuild the application images without BuildKit cache and recreate
+them. Do this only once active jobs have completed:
+
+```sh
+docker compose build --no-cache api worker frontend
+docker compose up -d --force-recreate api worker frontend
+```
+
+These commands do not remove the named RustFS/OpenSearch volumes. Do not use
+`docker compose down -v`; it deletes the archived data volumes.
