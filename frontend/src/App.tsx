@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ChangeEvent, type DragEvent, type For
 import ReactMarkdown from 'react-markdown'
 import { version as appVersion } from '../package.json'
 import SystemMonitor from './SystemMonitor'
+import Search from './Search'
 import { History, Library, LibraryDetail, RunMetadata, catalogueJson } from './Catalogue'
 import { parseRun, routeFor, type RunRecord } from './catalogue'
 import { isActiveRun, onlyActiveRuns, readActiveUploadIds, writeActiveUploadIds } from './activeUploads'
@@ -13,7 +14,7 @@ import 'katex/dist/katex.min.css'
 import { normalizeDisplayMath } from './math'
 import {
   apiError, diagnosticEntries, formatProcessingError, parseDocumentStatus, parsePages, parseUploadResponse, validateFiles, FILE_LIMITS,
-  type CacheState, type DocumentStatus, type Page, type Parser, type Status, type ProviderDiagnostic,
+  type CacheState, type DocumentStatus, type Page, type Parser, type Status, type ProviderDiagnostic, type PageProgress,
 } from './contracts'
 import { PARSERS, STATUS_LABELS, processingSteps, formatBytes, safeMarkdownUrl } from './ui'
 
@@ -25,6 +26,7 @@ type Job = {
   cache: CacheState
   summary: string | null
   pageCount: number | null
+  pageProgress: PageProgress | null
   pages: Page[] | null
   error: string | null
   diagnostic: ProviderDiagnostic | null
@@ -166,7 +168,7 @@ function Workspace({ runId }: { runId?: string }) {
       if (controller.signal.aborted) return
       const restored = results.flatMap((doc, index): Job[] => doc && isActiveRun(doc.status) ? [{
         id: ids[index], filename: doc.filename, parser: doc.parser, status: doc.status, cache: doc.cache,
-        summary: doc.summary, pageCount: doc.page_count, pages: null,
+        summary: doc.summary, pageCount: doc.page_count, pageProgress: doc.page_progress, pages: null,
         error: null, diagnostic: null, traceId: doc.trace_id, uploadId: doc.upload_id,
       }] : [])
       // Do not overwrite uploads accepted while the restore request was in flight.
@@ -182,7 +184,10 @@ function Workspace({ runId }: { runId?: string }) {
   }, [jobs, runId, restoringUploads])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [tab, setTab] = useState<ResultTab>('summary')
-  const [pageIndex, setPageIndex] = useState(0)
+  const [pageIndex, setPageIndex] = useState(() => {
+    const number = Number(new URLSearchParams(window.location.search).get('page'))
+    return runId && Number.isSafeInteger(number) && number >= 1 && number <= 100000 ? number - 1 : 0
+  })
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [pollError, setPollError] = useState<string | null>(null)
@@ -199,7 +204,7 @@ function Workspace({ runId }: { runId?: string }) {
     void requestDocument(runId, controller.signal).then(doc => {
       if (controller.signal.aborted) return
       setJobs([{ id: runId, filename: doc.filename, parser: doc.parser, status: doc.status, cache: doc.cache,
-        summary: doc.summary, pageCount: doc.page_count, pages: null,
+        summary: doc.summary, pageCount: doc.page_count, pageProgress: doc.page_progress, pages: null,
         error: doc.error ? formatProcessingError(doc.error) : null, diagnostic: doc.error?.diagnostic ?? null,
         traceId: doc.trace_id, uploadId: doc.upload_id }])
       setSelectedId(runId)
@@ -233,7 +238,7 @@ function Workspace({ runId }: { runId?: string }) {
       setJobs(previous => onlyActiveRuns([
         ...accepted.map(doc => ({
           id: doc.id, filename: doc.filename, parser: doc.parser, status: doc.status, cache: doc.cache,
-          summary: null, pageCount: null, pages: null, error: null, diagnostic: null,
+          summary: null, pageCount: null, pageProgress: null, pages: null, error: null, diagnostic: null,
           traceId: null, uploadId: null,
         })),
         ...previous,
@@ -264,7 +269,7 @@ function Workspace({ runId }: { runId?: string }) {
       const data = await getJson(response)
       if (response.status !== 202) throw new Error(apiError(response.status, data))
       setJobs(previous => previous.map(job => job.id === id ? {
-        ...job, status: 'summarizing' as Status, error: null, diagnostic: null, summary: null,
+        ...job, status: 'summarizing' as Status, pageProgress: null, error: null, diagnostic: null, summary: null,
       } : job))
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Retry request failed.'
@@ -311,6 +316,7 @@ function Workspace({ runId }: { runId?: string }) {
           cache: found.doc.cache,
           summary: found.doc.summary,
           pageCount: found.doc.page_count,
+          pageProgress: found.doc.page_progress,
           pages: found.pages ?? job.pages,
           error: (found.doc.status === 'failed' || found.doc.status === 'partial') ?
             (found.doc.error ? formatProcessingError(found.doc.error) : 'Processing failed.') : null,
@@ -426,7 +432,7 @@ function Workspace({ runId }: { runId?: string }) {
                 onClick={() => { setSelectedId(job.id); setTab('summary'); setPageIndex(0) }}>
                 <span className="job-file-icon"><Icon name="file" size={19}/></span>
                 <span className="job-info"><strong title={job.filename}>{job.filename}</strong>
-                  <small>{PARSERS.find(item => item.id === job.parser)?.name} {job.pageCount ? `· ${job.pageCount} pages` : ''}</small></span>
+                  <small>{PARSERS.find(item => item.id === job.parser)?.name} {job.pageCount ? `· ${job.pageCount} pages` : job.pageProgress ? `· Page ${job.pageProgress.page} of ${job.pageProgress.pages_total}` : ''}</small></span>
                 <span className="job-trailing"><StatusPill status={job.status}/>
                   {job.cache === 'hit' && <span className="cache-label">↗ CACHE HIT</span>}
                   {job.cache === 'shared' && <span className="cache-label">↗ SHARED JOB</span>}
@@ -440,7 +446,7 @@ function Workspace({ runId }: { runId?: string }) {
                   <div className="panel-overline">SELECTED RUN</div>
                   <h3 id="detail-heading" title={selected.filename}>{selected.filename}</h3>
                   <div className="detail-meta"><span>{PARSERS.find(item => item.id === selected.parser)?.name}</span>
-                    {selected.pageCount && <span>{selected.pageCount} pages</span>}
+                    {(selected.pageCount || selected.pageProgress) && <span>{selected.pageCount ?? selected.pageProgress?.pages_total} pages</span>}
                     {selected.cache === 'hit' && <span className="detail-cache">Cache hit</span>}
                     {selected.cache === 'shared' && <span className="detail-cache">Shared processing</span>}
                   </div>
@@ -474,7 +480,9 @@ function Workspace({ runId }: { runId?: string }) {
                   )}</dl>
                 </details>}
               {['queued', 'processing', 'summarizing'].includes(selected.status) && <div className="processing-note" role="status">
-                <span className="activity-pulse"/><span>{selected.status === 'queued' ? 'Waiting for an available worker…' : selected.status === 'processing' ? 'Extracting document pages…' : 'Generating the document summary…'}</span>
+                <span className="activity-pulse"/><span>{selected.status === 'queued' ? 'Waiting for an available worker…' : selected.status === 'processing' ? (selected.pageProgress
+                  ? `Extracting page ${selected.pageProgress.page} of ${selected.pageProgress.pages_total}${selected.pageProgress.attempt > 1 ? ` (retry ${selected.pageProgress.attempt}/${selected.pageProgress.max_attempts})` : ''}…`
+                  : 'Extracting document pages…') : 'Generating the document summary…'}</span>
               </div>}
               {(selected.status !== 'failed') && <>
                 <div className="detail-tabs" role="tablist" aria-label="Document results">
@@ -532,7 +540,7 @@ export default function App() {
   },[])
   function navigate(next:string) { if(next!==path){window.history.pushState(null,'',next);setPath(next);window.scrollTo(0,0)} }
   const route=routeFor(path)
-  const nav=[{href:'/',label:'History',active:route.view==='history'||route.view==='run'}, {href:'/upload',label:'Upload',active:route.view==='upload'}, {href:'/library',label:'Library',active:route.view==='library'||route.view==='document'}, {href:'/system',label:'System Monitor',active:route.view==='system'}]
+  const nav=[{href:'/',label:'History',active:route.view==='history'||route.view==='run'}, {href:'/upload',label:'Upload',active:route.view==='upload'}, {href:'/library',label:'Library',active:route.view==='library'||route.view==='document'}, {href:'/search',label:'Search',active:route.view==='search'}, {href:'/system',label:'System Monitor',active:route.view==='system'}]
   return <div className="app-shell">
     <div className="background-glow" aria-hidden="true" />
     <header className="topbar container">
@@ -545,8 +553,8 @@ export default function App() {
           onClick={event => { if (event.button===0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) {event.preventDefault(); navigate(item.href)} }}>{item.label}</a>)}
       </nav>
     </header>
-    {route.view === 'system' ? <SystemMonitor/> : route.view === 'history' ? <History/> : route.view === 'library' ? <Library/> : route.view === 'document' && 'id' in route ? <LibraryDetail key={path} id={route.id}/> : route.view === 'run' && 'id' in route ? <Workspace key={path} runId={route.id}/> : route.view === 'upload' ? null : <main className="container catalogue-main"><h1>Page not found</h1><a href="/">Return to Processing History</a></main>}
-    {/* Keep the Upload component alive while visiting History/Library/System so its
+    {route.view === 'search' ? <Search/> : route.view === 'system' ? <SystemMonitor/> : route.view === 'history' ? <History/> : route.view === 'library' ? <Library/> : route.view === 'document' && 'id' in route ? <LibraryDetail key={path} id={route.id}/> : route.view === 'run' && 'id' in route ? <Workspace key={path} runId={route.id}/> : route.view === 'upload' ? null : <main className="container catalogue-main"><h1>Page not found</h1><a href="/">Return to Processing History</a></main>}
+    {/* Keep the Upload component alive while visiting History/Library/Search/System so its
         selected files, in-flight POST and polling survive client-side navigation. */}
     <div hidden={route.view !== 'upload'}><Workspace/></div>
     <footer className="footer container"><span>PDF Processor · Local developer workspace</span><span>Archived results survive refresh and service restarts. New development installations reset data.</span></footer>

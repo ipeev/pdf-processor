@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Generate and retain frontend/package-lock.json with Node 22 inside Docker.
+# Generate and retain frontend/package-lock.json with the current Node builder inside Docker.
 # Requires network access to npm registry only on first lock generation or upgrade.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -12,13 +12,14 @@ if ! command -v docker >/dev/null 2>&1 || ! docker info >/dev/null 2>&1; then
   echo 'Docker is required to resolve frontend dependencies. See QUICKSTART_LINUX.md.' >&2
   exit 1
 fi
-printf '%s\n' '=== Resolving frontend/package-lock.json with npm (Node 22 in Docker) ==='
+node_image="$(awk '/^FROM node:/ {print $2; exit}' frontend/Dockerfile)"
+printf '%s\n' '=== Resolving frontend/package-lock.json with npm (Docker builder Node image) ==='
 docker run --rm \
   --user "$(id -u):$(id -g)" \
   -e npm_config_cache=/tmp/npm-cache \
   --mount "type=bind,src=$(pwd)/frontend,dst=/workspace" \
   --workdir /workspace \
-  node:22-bookworm-slim npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+  "$node_image" npm install --package-lock-only --ignore-scripts --no-audit --no-fund
 if [[ ! -s frontend/package-lock.json ]]; then
   echo 'Frontend lockfile generation failed.' >&2
   exit 1

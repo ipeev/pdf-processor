@@ -16,6 +16,22 @@ from app.observability import span
 log = logging.getLogger(__name__)
 
 
+class VisionProviderText(str):
+    """Model message content with *ephemeral* provider-response metadata.
+
+    Persists as ordinary text in RustFS. Metadata is only used for explicitly
+    enabled diagnostics after local validation fails; never expose via the API.
+    """
+
+    def __new__(cls, content: str, *, http_response: str, finish_reason: str, model: str, raw_model_content: str | None = None):
+        instance = str.__new__(cls, content)
+        instance.provider_model_content = content if raw_model_content is None else raw_model_content
+        instance.provider_http_response = http_response
+        instance.provider_finish_reason = finish_reason
+        instance.provider_model = model
+        return instance
+
+
 # The attached PDF/image is untrusted task data. A model may still be influenced
 # by malicious document content; this instruction is a defense, not a guarantee.
 _EXTRACTION_SYSTEM_PROMPT = (
@@ -149,6 +165,13 @@ class OpenRouterClient:
                     raise failure("PROVIDER_EMPTY_RESPONSE", "Model returned empty text.",
                                   kind="empty", attempt=attempt, response=response,
                                   body=body, finish_reason=finish)
+                if phase == "vision_figures":
+                    # Retain the existing stripped return value, but keep the
+                    # exact unstripped model output and provider HTTP response
+                    # in ephemeral metadata for explicit error-path logging.
+                    return VisionProviderText(content.strip(), http_response=response.text,
+                                              finish_reason=finish, model=str(payload.get("model", "")),
+                                              raw_model_content=content)
                 return content.strip()
             except ProcessingError:
                 raise

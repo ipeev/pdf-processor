@@ -11,12 +11,14 @@ export type ProviderDiagnostic = Partial<Record<
   'total_tokens' | 'http_status' | 'attempt' | 'max_attempts', number
 >>
 export type DocumentError = { code: string; message: string; diagnostic?: ProviderDiagnostic | null }
+export type PageProgress = { page: number; pages_total: number; attempt: number; max_attempts: number }
 export type DocumentStatus = {
   id: string
   filename: string
   parser: Parser
   status: Status
   page_count: number | null
+  page_progress: PageProgress | null
   summary: string | null
   cache: CacheState
   error: DocumentError | null
@@ -125,6 +127,21 @@ export function parseDocumentStatus(value: unknown, id: string): DocumentStatus 
       (value.summary !== null && value.summary !== undefined && typeof value.summary !== 'string')) {
     throw new Error('The server returned an invalid document status.')
   }
+  const rawProgress = value.page_progress
+  let progress: PageProgress | null = null
+  if (rawProgress !== undefined && rawProgress !== null) {
+    if (value.status !== 'processing' || !isObject(rawProgress) ||
+        !Number.isInteger(rawProgress.page) || !Number.isInteger(rawProgress.pages_total) ||
+        !Number.isInteger(rawProgress.attempt) || !Number.isInteger(rawProgress.max_attempts) ||
+        (rawProgress.page as number) < 1 || (rawProgress.page as number) > (rawProgress.pages_total as number) ||
+        (rawProgress.pages_total as number) > 10000 ||
+        (rawProgress.attempt as number) < 1 || (rawProgress.attempt as number) > (rawProgress.max_attempts as number) ||
+        (rawProgress.max_attempts as number) > 3) {
+      throw new Error('The server returned invalid page progress.')
+    }
+    progress = {page: rawProgress.page as number, pages_total: rawProgress.pages_total as number,
+                attempt: rawProgress.attempt as number, max_attempts: rawProgress.max_attempts as number}
+  }
   const error = value.error
   if (error != null && (!isObject(error) || typeof error.code !== 'string' || typeof error.message !== 'string')) {
     throw new Error('The server returned an invalid document error.')
@@ -141,6 +158,7 @@ export function parseDocumentStatus(value: unknown, id: string): DocumentStatus 
     parser: value.parser,
     status: value.status,
     page_count: typeof value.page_count === 'number' ? value.page_count : null,
+    page_progress: progress,
     summary: typeof value.summary === 'string' ? value.summary : null,
     cache: isCache(value.cache) ? value.cache : 'miss',
     trace_id: validTraceId(value.trace_id),

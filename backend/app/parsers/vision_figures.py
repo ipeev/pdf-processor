@@ -20,6 +20,8 @@ from app.openrouter_client import OpenRouterClient
 from app.parsers.base import ParsedDocument, ParsedPage
 from app.parsers.pdf_render import render_one_page
 from app.parsers.pypdf_parser import safe_reader
+from app.vision_retry import known_failure, retry_delay
+from app.vision_debug import log_invalid_vision_response
 
 # The cache fingerprint incorporates the current crop policy. Other parser
 # fingerprints remain independent of figure crop settings.
@@ -300,7 +302,7 @@ class VisionFiguresParser:
     def __init__(self, client: OpenRouterClient, settings: Settings):
         self.client, self.settings = client, settings
 
-    async def parse(self, path: Path, *, page_response=None) -> VisionResult:
+    async def parse(self, path: Path, *, page_response=None, on_progress=None) -> VisionResult:
         reader = await asyncio.to_thread(safe_reader, path, self.settings.max_pages_per_document)
         count = len(reader.pages)
         if count > min(self.settings.max_ai_pages_per_document, self.settings.max_vision_figures_pages_per_document):
@@ -317,12 +319,38 @@ class VisionFiguresParser:
                 raise ProcessingError('INVALID_PDF', 'PDF page count changed unexpectedly.')
             for index in range(count):
                 page = index + 1
+                if on_progress is not None:
+                    await on_progress(page, count, 1, self.settings.vision_figures_page_attempts)
                 try:
                     rendered_png = await asyncio.to_thread(render_one_page, pdf, index, self.settings)
-                    raw = (await page_response(page, rendered_png) if page_response is not None else
-                           await self.client.complete_vision_figures_page(
-                               rendered_png, page=page, max_tokens=self.settings.vision_figures_max_tokens_per_page))
-                    parsed, figures, notes = await asyncio.to_thread(assemble_page, raw, rendered_png, page, self.settings)
+                    async def validate(raw: str):
+                        return await asyncio.to_thread(assemble_page, raw, rendered_png, page, self.settings)
+
+                    if page_response is not None:
+                        # Archive owns durable admissions, recorded attempts,
+                        # cross-run validated cache and crash-safe replay.
+                        parsed, figures, notes = await page_response(page, rendered_png, validate)
+                    else:
+                        # Offline / local preview path uses the same validation
+                        # policy, without pretending it has a durable cache.
+                        for attempt in range(1, self.settings.vision_figures_page_attempts + 1):
+                            if on_progress is not None and attempt > 1:
+                                await on_progress(page, count, attempt, self.settings.vision_figures_page_attempts)
+                            raw = None
+                            try:
+                                raw = await self.client.complete_vision_figures_page(
+                                    rendered_png, page=page,
+                                    max_tokens=self.settings.vision_figures_max_tokens_per_page)
+                                parsed, figures, notes = await validate(raw)
+                                break
+                            except ProcessingError as exc:
+                                if raw is not None:
+                                    log_invalid_vision_response(self.settings, raw, page=page,
+                                                                attempt=attempt, exc=exc)
+                                if not known_failure(exc) or attempt == self.settings.vision_figures_page_attempts:
+                                    raise exc.with_context(attempt=attempt,
+                                        max_attempts=self.settings.vision_figures_page_attempts)
+                                await retry_delay(attempt)
                     if sum(len(f.data) for f in assets) + sum(len(f.data) for f in figures) > self.settings.max_vision_total_asset_bytes:
                         raise ProcessingError('VISION_ASSET_LIMIT', 'Cropped images exceed the per-document byte limit.')
                     pages.append(parsed)

@@ -1,6 +1,6 @@
 # Build and test React entirely inside Docker. The Nginx runtime has no Node dependencies.
 # Use glibc-based Node for native Rollup tooling; runtime remains Alpine Nginx.
-FROM node:22-bookworm-slim AS builder
+FROM node:26-bookworm-slim AS builder
 WORKDIR /workspace
 # Browser-facing settings (injected at build time; not Docker-internal network addresses).
 ARG VITE_GRAFANA_URL
@@ -21,7 +21,7 @@ COPY backend/app/schemas.py /backend/app/schemas.py
 COPY frontend/tests ./tests
 RUN npm test && npm run build
 
-FROM nginx:1.27-alpine
+FROM nginx:1.31-alpine
 COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=builder /workspace/dist /usr/share/nginx/html
 EXPOSE 80

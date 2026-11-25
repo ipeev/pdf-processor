@@ -13,7 +13,7 @@ Thanks for helping improve PDF Processor. This project is currently optimized fo
 ## Code / environment
 
 - Backend: Python 3.15.2 in Docker; FastAPI, `uv`, `backend/uv.lock`.
-- Frontend: Node 22, React 19, TypeScript, Vite, `frontend/package-lock.json`.
+- Frontend: Node 26, React 19, TypeScript, Vite, `frontend/package-lock.json`.
 - Services: Redis, RustFS, OpenSearch via Docker Compose.
 - `npm ci` and `uv sync --locked` are deliberate reproducible installs. Lockfile changes should be reviewed together with updated manifests and verified by `scripts/check_release_candidate.py`.
 - Do not modify the existing parser values (`pypdf`, `gemini`, `gpt5_mini`, `vision_figures`) without updating both backend and frontend validation/tests.

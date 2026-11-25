@@ -11,6 +11,7 @@ from app.archive_store import ArchiveStore
 from app.config import get_settings
 from app.document_repository import DocumentRepository
 from app.index_manager import IndexManager
+from app.fulltext_search import PassageIndex
 from app.object_store import S3ObjectStore
 from app.opensearch_client import OpenSearchClient
 from app.persistent_pipeline import PersistentPipeline
@@ -30,7 +31,7 @@ async def main(action, stream=None):
         runs = RunRepository(archive, docs.indexes, docs)
         repo = RedisRepository(redis, result_ttl=settings.result_ttl_seconds, cache_ttl=settings.cache_ttl_seconds)
         queue = DocumentQueue(redis, settings.stream_key, settings.consumer_group, settings.consumer_name)
-        pipeline = PersistentPipeline(settings, docs, runs, repo)
+        pipeline = PersistentPipeline(settings, docs, runs, repo, search_index=PassageIndex(search))
         return await execute(ArchiveMaintenance(pipeline, queue, temporary), action, stream)
     finally:
         await redis.aclose()

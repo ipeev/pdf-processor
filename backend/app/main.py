@@ -7,8 +7,11 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from redis.asyncio import Redis
 
+from app.version import APPLICATION_VERSION
 from app.api import router
 from app.library_api import router as library_router
+from app.search_api import router as search_router
+from app.fulltext_search import PassageIndex
 from app.archive_store import ArchiveStore
 from app.archive_monitor import ArchiveMonitor
 from app.archive_gate import guarded
@@ -47,9 +50,10 @@ async def lifespan(app: FastAPI):
     app.state.openrouter_monitor = OpenRouterKeyMonitor(settings)
     app.state.opensearch = OpenSearchClient(settings.opensearch_url)
     app.state.index_manager = IndexManager(app.state.opensearch)
+    app.state.passage_index = PassageIndex(app.state.opensearch)
     app.state.documents = PermanentDocumentRepository(app.state.archive_store, app.state.index_manager)
     app.state.runs = RunRepository(app.state.archive_store, app.state.index_manager, app.state.documents)
-    app.state.pipeline_archive = PersistentPipeline(settings, app.state.documents, app.state.runs, app.state.repository)
+    app.state.pipeline_archive = PersistentPipeline(settings, app.state.documents, app.state.runs, app.state.repository, search_index=app.state.passage_index)
     recovery_task = None
     try:
         # Initialize separate buckets; never apply temporary lifecycle to archive.
@@ -81,9 +85,10 @@ async def lifespan(app: FastAPI):
         shutdown_telemetry()
 
 
-app = FastAPI(title="Async PDF Processor", version="0.12.3", lifespan=lifespan)
+app = FastAPI(title="Async PDF Processor", version=APPLICATION_VERSION, lifespan=lifespan)
 app.include_router(router)
 app.include_router(library_router)
+app.include_router(search_router)
 
 @app.middleware("http")
 async def trace_http(request: Request, call_next):

@@ -3,6 +3,7 @@ import importlib.util
 from pathlib import Path
 from unittest.mock import patch
 import subprocess
+import re
 
 import pytest
 
@@ -46,12 +47,17 @@ def test_frontend_secret_never_bundled():
 
 def test_node_build_and_frontend_tests_are_part_of_image():
     dockerfile = (ROOT / 'frontend/Dockerfile').read_text()
-    assert 'FROM node:22-bookworm-slim AS builder' in dockerfile
-    assert 'node:22-bookworm-slim npm install' in (ROOT / 'scripts/lock_frontend.sh').read_text()
+    # The lock generator resolves the build image from the Dockerfile itself;
+    # it must work for the selected Node build image without a version literal.
+    assert re.search(r'^FROM node:[0-9]+-bookworm-slim AS builder$', dockerfile, re.MULTILINE)
+    lock_script = (ROOT / 'scripts/lock_frontend.sh').read_text()
+    assert 'node_image="$(awk' in lock_script
+    assert "'/^FROM node:/ {print $2; exit}' frontend/Dockerfile" in lock_script
+    assert '"$node_image" npm install --package-lock-only' in lock_script
     assert 'npm ls react react-dom vite rollup' in dockerfile
     assert 'npm ci' in dockerfile
     assert 'npm test && npm run build' in dockerfile
-    assert 'FROM nginx:1.27-alpine' in dockerfile
+    assert re.search(r'^FROM nginx:[0-9]+\.[0-9]+-alpine$', dockerfile, re.MULTILINE)
     assert 'COPY --from=builder /workspace/dist' in dockerfile
 
 

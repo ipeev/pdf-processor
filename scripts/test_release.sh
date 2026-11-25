@@ -3,6 +3,7 @@
 # Default includes paid OpenRouter tests; --offline runs no paid calls.
 set -euo pipefail
 cd "$(dirname "$0")/.."
+RELEASE_VERSION="$(awk -F '"' '/^version = / {print $2; exit}' backend/pyproject.toml)"
 MODE=full
 case "${1:-}" in
   '') ;;
@@ -13,8 +14,8 @@ esac
 if [[ "$#" -gt 1 ]]; then echo 'Too many arguments.' >&2; exit 2; fi
 mkdir -p test-results
 stamp="$(date +%Y%m%d-%H%M%S)"
-logfile="test-results/v0.12.3-${stamp}.log"
-printf 'PDF Processor v0.12.3 verification | mode: %s\n' "$MODE"
+logfile="test-results/v${RELEASE_VERSION}-${stamp}.log"
+printf 'PDF Processor v%s verification | mode: %s\n' "$RELEASE_VERSION" "$MODE"
 printf 'Full log: %s\n' "$logfile"
 if [[ "$MODE" == full ]]; then
   printf 'Includes PAID OpenRouter calls across PyPDF, native-PDF AI and image OCR.\n'

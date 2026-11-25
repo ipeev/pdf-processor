@@ -24,6 +24,7 @@ from app.object_store import LocalTestObjectStore, S3ObjectStore
 from app.archive_store import ArchiveStore
 from app.opensearch_client import OpenSearchClient
 from app.index_manager import IndexManager
+from app.fulltext_search import PassageIndex
 from app.document_repository import DocumentRepository as PermanentDocumentRepository
 from app.run_repository import RunRepository
 from app.persistent_pipeline import PersistentPipeline
@@ -294,7 +295,7 @@ async def run_worker_instance(settings: Settings, stop_event, register) -> None:
     search = OpenSearchClient(settings.opensearch_url)
     documents = PermanentDocumentRepository(archive, IndexManager(search))
     runs = RunRepository(archive, documents.indexes, documents)
-    pipeline = PersistentPipeline(settings, documents, runs, repo)
+    pipeline = PersistentPipeline(settings, documents, runs, repo, search_index=PassageIndex(search))
     worker = DocumentWorker(settings, queue, repo, processor, object_store=store, archive_pipeline=pipeline)
     register(worker)
     try:

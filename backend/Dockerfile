@@ -32,6 +32,9 @@ COPY frontend/package.json frontend/package-lock.json ./frontend/
 COPY samples/ ./samples/
 COPY scripts/ ./scripts/
 COPY docker-compose.yml ./docker-compose.yml
+# Dependency-upgrade contract tests exercise the actual checked-in CI workflow.
+# It is public configuration, not a secret; no Markdown documentation is copied.
+COPY .github/workflows/ci.yml ./.github/workflows/ci.yml
 
 # Run uv in the Python project directory (not the repository root).
 WORKDIR /app/backend

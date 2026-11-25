@@ -35,3 +35,6 @@ test-results/
 *.pfx
 id_rsa
 id_ed25519
+
+# Local development dependency snapshots.
+.local-upgrade-backups/
