@@ -4,11 +4,12 @@ import { isParser } from './contracts.ts'
 export const STATUSES: Status[] = ['queued', 'processing', 'summarizing', 'completed', 'partial', 'failed']
 export const isRunId = (v: unknown): v is string => typeof v === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(v)
 export const isDocumentId = (v: unknown): v is string => typeof v === 'string' && /^[0-9a-f]{64}$/.test(v)
-export type Route = { view: 'history' | 'upload' | 'library' | 'system' | 'missing' } | { view: 'run' | 'document'; id: string }
+export type Route = { view: 'history' | 'upload' | 'library' | 'system' | 'search' | 'missing' } | { view: 'run' | 'document'; id: string }
 export function routeFor(path: string): Route {
   if (path === '/') return { view: 'history' }
   if (path === '/upload') return { view: 'upload' }
   if (path === '/library') return { view: 'library' }
+  if (path === '/search') return { view: 'search' }
   if (path === '/system') return { view: 'system' }
   const parts = path.split('/')
   if (parts.length === 3 && parts[1] === 'runs' && isRunId(parts[2])) return { view: 'run', id: parts[2] }

@@ -10,10 +10,86 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def test_lock_provenance_and_exact_versions():
     import sys
-    result = subprocess.run([sys.executable, str(ROOT / 'scripts/check_release_candidate.py')],
+    result = subprocess.run([sys.executable, str(ROOT / 'scripts/check_release_candidate.py'), '--runtime-only'],
                             check=False, capture_output=True, text=True)
     assert result.returncode == 0, result.stdout + result.stderr
     assert 'no dependency resolution' in result.stdout
+
+
+def test_release_checker_distinguishes_source_checkout_from_minimal_image(tmp_path):
+    """Runtime metadata validation does not depend on source docs or workflows."""
+    import shutil
+    import sys
+    for rel in ('scripts/check_release_candidate.py', 'backend/pyproject.toml',
+                'backend/uv.lock', 'frontend/package.json',
+                'frontend/package-lock.json', 'docker-compose.yml'):
+        dst = tmp_path / rel
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(ROOT / rel, dst)
+    tool = str(tmp_path / 'scripts/check_release_candidate.py')
+    runtime = subprocess.run([sys.executable, tool, '--runtime-only'],
+                             capture_output=True, text=True)
+    assert runtime.returncode == 0, runtime.stdout + runtime.stderr
+    assert 'runtime metadata' in runtime.stdout
+    # Full-source validation must not silently bypass missing documentation.
+    source = subprocess.run([sys.executable, tool], capture_output=True, text=True)
+    assert source.returncode != 0
+    assert 'missing public documentation: README.md' in source.stderr
+
+
+def test_compose_release_labels_change_on_upgrade():
+    """Application containers must be recreated when a new release is deployed."""
+    import re
+    from pathlib import Path
+    import tomllib
+    version = tomllib.loads((ROOT / 'backend/pyproject.toml').read_text())['project']['version']
+    compose = (ROOT / 'docker-compose.yml').read_text()
+    for name in ('frontend', 'api', 'worker'):
+        match = re.search(
+            rf'(?ms)^  {name}:\n    labels:\n      org\.opencontainers\.image\.version: "([^"]+)"',
+            compose,
+        )
+        assert match and match.group(1) == version, (name, match.group(1) if match else None)
+
+
+def test_setup_rejects_running_container_version_drift():
+    setup = (ROOT / 'scripts/setup.sh').read_text()
+    assert 'for service in api worker frontend; do' in setup
+    assert 'while IFS= read -r container_id; do' in setup
+    assert 'docker inspect --format' in setup
+    assert 'docker exec "$container_id" python -c' in setup
+    assert 'running_version' in setup
+    assert 'running version=$running_version' in setup
+    assert '--force-recreate api worker frontend' in setup
+    assert 'down -v' not in setup.split('for service in api worker frontend; do')[1].split('=== Containers ===')[0]
+
+
+def test_runtime_metadata_mismatch_reports_observed_version(tmp_path):
+    """A mixed release reports what the image contains, not a cryptic assertion."""
+    import shutil
+    import sys
+    for rel in ('scripts/check_release_candidate.py', 'backend/pyproject.toml',
+                'backend/uv.lock', 'frontend/package.json',
+                'frontend/package-lock.json', 'docker-compose.yml'):
+        dst = tmp_path / rel
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(ROOT / rel, dst)
+    project = tmp_path / 'backend/pyproject.toml'
+    project.write_text(project.read_text().replace('version = "' + __import__('tomllib').loads(project.read_text())['project']['version'] + '"', 'version = "0.0.0"'))
+    check = subprocess.run([sys.executable, str(tmp_path / 'scripts/check_release_candidate.py'), '--runtime-only'],
+                           capture_output=True, text=True)
+    assert check.returncode != 0
+    assert "found version='0.0.0'" in check.stderr
+    assert 'running Docker image' in check.stderr
+
+
+def test_verify_checks_checkout_before_image_and_image_uses_runtime_mode():
+    script = (ROOT / 'scripts/verify.sh').read_text()
+    source_check = 'python3 scripts/check_release_candidate.py'
+    startup = './scripts/setup.sh --no-prompt'
+    runtime_check = 'python /app/scripts/check_release_candidate.py --runtime-only'
+    assert script.index(source_check) < script.index(startup)
+    assert runtime_check in script
 
 
 def test_container_install_fails_closed_on_missing_locks():
@@ -74,3 +150,37 @@ def test_rc_shell_syntax_and_lifetime_scope():
                      'scripts/verify.sh','scripts/test_release.sh'):
         script = ROOT / relative
         subprocess.run(['bash','-n',str(script)],check=True)
+
+
+def test_single_release_version_source_and_runtime_api():
+    import tomllib
+    import sys
+    from app.version import APPLICATION_VERSION
+    from app.main import app
+    expected = tomllib.loads((ROOT / 'backend/pyproject.toml').read_text())['project']['version']
+    assert APPLICATION_VERSION == expected
+    assert app.version == expected
+    result = subprocess.run([sys.executable, str(ROOT / 'scripts/sync_release_version.py'), '--check'],
+                            capture_output=True, text=True)
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_version_sync_can_repair_a_stale_generated_manifest(tmp_path):
+    import shutil
+    import sys
+    for rel in ('scripts/sync_release_version.py', 'backend/pyproject.toml', 'backend/uv.lock',
+                'frontend/package.json', 'frontend/package-lock.json', 'docker-compose.yml'):
+        dst = tmp_path / rel
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(ROOT / rel, dst)
+    npm = tmp_path / 'frontend/package.json'
+    npm.write_text(npm.read_text().replace('"version": "' +
+        __import__('tomllib').loads((tmp_path/'backend/pyproject.toml').read_text())['project']['version'] + '"',
+        '"version": "0.0.0"', 1))
+    tool = str(tmp_path / 'scripts/sync_release_version.py')
+    check = subprocess.run([sys.executable, tool, '--check'], capture_output=True, text=True)
+    assert check.returncode != 0 and 'stale' in check.stderr
+    repair = subprocess.run([sys.executable, tool, '--write'], capture_output=True, text=True)
+    assert repair.returncode == 0, repair.stderr
+    check = subprocess.run([sys.executable, tool, '--check'], capture_output=True, text=True)
+    assert check.returncode == 0, check.stderr

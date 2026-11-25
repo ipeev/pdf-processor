@@ -67,3 +67,12 @@ async def test_ocr_provider_failure_not_silent(settings, sample_scanned):
             raise ProcessingError("PROVIDER_UNAVAILABLE", "Upstream unavailable")
     with pytest.raises(ProcessingError, match="PROVIDER_UNAVAILABLE"):
         await GPT5OCRParser(FailGPT(), settings).parse(sample_scanned)
+
+
+@pytest.mark.asyncio
+async def test_image_ocr_reports_page_in_progress(settings, sample_scanned):
+    reported = []
+    async def report(page, total, attempt, maximum):
+        reported.append((page, total, attempt, maximum))
+    await GPT5OCRParser(FakeGPT(), settings).parse(sample_scanned, on_progress=report)
+    assert reported == [(1, 1, 1, 1)]

@@ -277,7 +277,10 @@ async def test_ai_extraction_and_summary_called_once_for_duplicate_gemini_upload
     processor = DocumentProcessor(settings, repo, summarizer=summary)
     extraction_calls = []
 
-    async def mock_gemini_extract(parser, path):
+    async def mock_gemini_extract(parser, path, *, on_progress=None):
+        # DocumentProcessor passes a page-status callback during extraction.
+        # A synthetic extractor must accept the same contract as the real parser.
+        assert callable(on_progress)
         extraction_calls.append((parser, path.read_bytes()[:5]))
         return ParsedDocument([ParsedPage(1, "# Extracted by Gemini (mock)")])
 

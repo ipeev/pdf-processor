@@ -10,7 +10,7 @@ from uuid import UUID
 
 import httpx
 from app.archive_gate import archive_gate, finish_before_unlock
-from app.archive_monitor import DOC, RUN, ORIGINAL, DOCUMENT, RUN_MANIFEST, ARTIFACT, VISION_OBJECT
+from app.archive_monitor import DOC, RUN, ORIGINAL, DOCUMENT, RUN_MANIFEST, ARTIFACT, VISION_OBJECT, VISION_CACHE
 from app.errors import ProcessingError
 from app.persistent_pipeline import encode_pages
 from app.reconciliation import rebuild
@@ -33,7 +33,7 @@ def content_type(key):
         return 'application/pdf'
     if DOCUMENT.fullmatch(key) or RUN_MANIFEST.fullmatch(key) or LOCATOR.fullmatch(key) or TOMBSTONE.fullmatch(key):
         return 'application/json'
-    if VISION_OBJECT.fullmatch(key):
+    if VISION_OBJECT.fullmatch(key) or VISION_CACHE.fullmatch(key):
         return 'application/json'
     if ARTIFACT.fullmatch(key):
         return ('image/png' if key.endswith('.png') else 'application/json' if key.endswith('.json')
@@ -103,6 +103,13 @@ async def audit(m, *, check_index=True, restoring=False):
             if parent not in runs or runs[parent].parser.value != 'vision_figures':
                 raise invalid('Vision request record has no valid parent run.')
             referenced.add(key)
+    # Shared page caches are scoped to a canonical document. They survive
+    # deletion of an individual run and are included in exact backups.
+    for key in keys:
+        if VISION_CACHE.fullmatch(key):
+            if key.split('/', 1)[0] not in docs:
+                raise invalid('Vision page cache has no parent document.')
+            referenced.add(key)
     if not set(preferred) <= runs.keys() or not referenced <= keys:
         raise invalid('Missing preferred run or referenced artifact.')
     for key in keys:
@@ -147,6 +154,8 @@ async def exact_rebuild(m):
             if exc.response.status_code != 404:
                 raise
     await rebuild(m.p.documents, m.p.runs)
+    if getattr(m.p, 'search_index', None) is not None:
+        await m.p.search_index.rebuild_all(m.p)
     result = await audit(m)
     await m.archive.remove_key('maintenance/reconcile-needed.json')
     return result

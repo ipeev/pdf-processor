@@ -1,44 +1,62 @@
-# Public GitHub publication checklist — PDF Processor 0.12.3
+# Publishing PDF Processor on GitHub
 
-This archive is prepared as a **new source repository**. It is not automatically published, and the first remote GitHub Actions results have not yet been observed.
+This is a **public source release**, not a declaration that the self-hosted application is ready for untrusted internet traffic. The service has no built-in login or per-user authorization. See [SECURITY.md](../SECURITY.md).
 
-## Before creating the repository
+## Before pushing
 
-- [ ] Review the [MIT License](../LICENSE) and change the generic copyright holder to the correct legal attribution if required.
-- [ ] Confirm rights to redistribute *all code and bundled test PDFs*, benchmark fixtures, diagrams, and third-party materials. A generated fixture is not automatically licensed solely because it is in the archive.
-- [ ] Run `python3 scripts/check_publication.py` and `python3 scripts/check_release_candidate.py` and inspect the staged file list manually. Automated scans cannot prove that every source or PDF is free from private information.
-- [ ] Verify `.env`, user PDFs, provider keys, tokens, backups, logs, and test results are not tracked. Do not import unrelated or private Git history.
-- [ ] Read [security limits](../SECURITY.md): the application's localhost deployment is not safe for public HTTP exposure.
-
-## Create and push a public repository
-
-From the extracted `pdf-processor` directory:
+- [ ] Ensure no `.env`, OpenRouter keys, user documents, generated model response logs, backups, server configuration, or private Git history are included. The bundled fixtures also require a final human redistribution/license review.
+- [ ] Confirm the [MIT license](../LICENSE) attribution is the one you intend to publish.
+- [ ] Verify manifest/lockfile metadata and the public documentation link and privacy checks:
 
 ```bash
-git init -b main
-git add .
+python3 scripts/sync_release_version.py --check
+python3 scripts/check_release_candidate.py
+python3 scripts/check_publication.py
+python3 -m compileall -q backend/app scripts
+find scripts -name '*.sh' -print0 | xargs -0 -r bash -n
+```
+
+- [ ] Run the full **offline** integration suite in an idle or disposable Linux Docker environment (not while processing paid documents):
+
+```bash
+./scripts/test_release.sh --offline
+./scripts/check_regressions.sh
+```
+
+Do not run `./scripts/test_release.sh` without `--offline` as the default mode can call paid OpenRouter models. **Never** use `docker compose down -v` if you need to preserve existing RustFS archives.
+
+## Push and verify
+
+From the repository root on `main`, review the source files and changes intended for the release:
+
+```bash
 git status --short
+git diff --stat
+git add -A
 git diff --cached --stat
-# Inspect the actual staged diff as well.
-git commit -m "Initial public release v0.12.3"
+git diff --cached --check
+VERSION="$(python3 scripts/sync_release_version.py --print)"
+git commit -m "chore: release v${VERSION}"
+git push origin main
 ```
 
-Create a public repository named `pdf-processor` through GitHub, then:
+Do not commit your release ZIP, local `.env`, development backups, Docker volumes, generated logs, or uploaded PDFs to the repository. A GitHub Release ZIP is attached to the **GitHub Release page** as an asset after CI is green; it is not added to the source tree.
+
+- [ ] Wait for GitHub **CI / Source checks and frontend** and **CI / Complete offline Docker integration** to pass on the pushed commit.
+- [ ] Check **CodeQL / Python** and **CodeQL / JavaScript/TypeScript**. CodeQL and Dependabot are configured; dependency updates are proposals and should not be merged without passing checks.
+- [ ] Confirm CI runs with **no OpenRouter API key**, no paid inference, and only mocked/synthetic fixtures.
+- [ ] Review the final documentation: [README](../README.md), [project overview](../project_overview.md), [architecture](ARCHITECTURE.md), [API](PERSISTENT_API.md), [full-text search](FULL_TEXT_SEARCH.md), [operations](OPERATIONS.md), and [roadmap](ROADMAP.md).
+
+Only after the checks pass, tag the **same verified commit** and publish a GitHub Release:
 
 ```bash
-git remote add origin https://github.com/YOUR_USERNAME/pdf-processor.git
-git push -u origin main
+VERSION="$(python3 scripts/sync_release_version.py --print)"
+git tag -a "v${VERSION}" -m "PDF Processor v${VERSION}"
+git push origin "v${VERSION}"
 ```
 
-Or use authenticated `gh repo create pdf-processor --public --source=. --remote=origin --push`. Replace `YOUR_USERNAME` with the actual account; no private server URL belongs in source documentation.
+Attach the **complete version-matched source ZIP** named `pdf-processor-v${VERSION}-full.zip` to the GitHub Release (alongside GitHub’s automatically generated source archives). Confirm the ZIP was built from the same source snapshot as the verified tag, contains the MIT license and docs, and excludes private runtime files. Before announcing the release, confirm all required checks are green on the tag commit.
 
-## Verify free CI and publish the release
+The release notes should describe the current capabilities and limitations: document extraction, asynchronous processing, figure/OCR pipeline and its imperfect crops, page cache/retries/progress, searchable archives, and free offline CI. Do not claim live-provider correctness or public internet deployment readiness based solely on offline tests.
 
-- [ ] Check **Actions → CI**: `source-and-frontend` and `offline-integration` must pass.
-- [ ] Check **Actions → CodeQL**: Python and JavaScript/TypeScript analyses must complete; do not enable duplicate scanning setups.
-- [ ] Enable Dependabot security alerts/updates; review any lockfile changes before merging.
-- [ ] Protect `main` using a branch ruleset and require passing CI. Use read-only defaults for `GITHUB_TOKEN`.
-- [ ] Do not add an OpenRouter key to Actions; no paid inference is required to test this repository.
-- [ ] Publish GitHub release and tag `v0.12.3` after passing checks. Release notes should describe the **current capabilities and known limitations** rather than private development events.
-
-For the current feature scope, see [project overview](../project_overview.md); for follow-up ideas, see [roadmap](ROADMAP.md).
+The release must use the dependency versions recorded in `backend/uv.lock` and `frontend/package-lock.json`; do not resolve or update dependencies while assembling a source release. See [Dependency versions and verification](DEPENDENCY_UPGRADES.md).

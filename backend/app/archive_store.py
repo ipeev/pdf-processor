@@ -372,39 +372,159 @@ class ArchiveStore:
             raise _integrity()
         return artifact.data
 
-    def vision_call_key(self, document_id: str, run_id: UUID, page: int, *, response: bool = False) -> str:
+    def vision_call_key(self, document_id: str, run_id: UUID, page: int, *, response: bool = False,
+                        attempt: int = 1, failure: bool = False) -> str:
         if type(page) is not int or not 1 <= page <= 10000:
             raise ProcessingError('INVALID_ARTIFACT', 'Invalid vision page number.')
         if not isinstance(run_id, UUID):
             raise ProcessingError('INVALID_RUN_ID', 'Invalid run ID.')
-        return f'{_doc(document_id)}/runs/{run_id}/vision/{"responses" if response else "admissions"}/p{page:04d}.json'
+        if type(attempt) is not int or not 1 <= attempt <= 3:
+            raise ProcessingError('INVALID_ARTIFACT', 'Invalid vision attempt number.')
+        suffix = '' if attempt == 1 else f'-a{attempt:02d}'
+        kind = 'failures' if failure else 'responses' if response else 'admissions'
+        return f'{_doc(document_id)}/runs/{run_id}/vision/{kind}/p{page:04d}{suffix}.json'
 
-    async def durable_vision_response(self, document_id: str, run_id: UUID, page: int, invoke):
-        """Exactly-once admission, NOT exactly-once provider completion.
+    def vision_page_cache_key(self, document_id: str, png: bytes, settings) -> str:
+        # Same original PDF and exact model input, regardless of run ID.
+        # The prompt version is part of the key, so future prompt changes
+        # cannot use incompatible old responses.
+        from app.parsers.vision_figures import PROMPT_VERSION
+        descriptor = _json({'version': 1, 'png_sha256': hashlib.sha256(png).hexdigest(),
+            'prompt': PROMPT_VERSION, 'model': settings.vision_figures_model,
+            'max_tokens': settings.vision_figures_max_tokens_per_page})
+        return f'{_doc(document_id)}/vision-cache/{hashlib.sha256(descriptor).hexdigest()}.json'
 
-        Once admitted, a missing result on redelivery is marked uncertain instead
-        of starting another billable call. Saved responses are replayable after crash.
+    async def durable_vision_response(self, document_id: str, run_id: UUID, page: int, invoke, *, attempt: int = 1):
+        """Record each paid attempt before invocation; replay its actual outcome.
+
+        Old attempt-one object names are preserved for compatibility. An
+        admission without an outcome is UNCERTAIN and may have been billed.
+        Never automatically repeat it, even when another attempt is allowed.
         """
-        result_key = self.vision_call_key(document_id, run_id, page, response=True)
-        saved = await self.optional(result_key)
-        if saved is not None:
-            return saved.data.decode('utf-8')
-        admission_key = self.vision_call_key(document_id, run_id, page)
-        try:
-            await self._write(admission_key, _json({'version': 1, 'page': page}), 'application/json')
-        except ProcessingError as exc:
-            if exc.code != 'ARCHIVE_CONFLICT':
-                raise
+        from app.vision_retry import known_failure
+        from app.provider_diagnostics import sanitize_diagnostic
+        result_key = self.vision_call_key(document_id, run_id, page, response=True, attempt=attempt)
+        failure_key = self.vision_call_key(document_id, run_id, page, failure=True, attempt=attempt)
+        admission_key = self.vision_call_key(document_id, run_id, page, attempt=attempt)
+
+        async def replay():
             saved = await self.optional(result_key)
             if saved is not None:
                 return saved.data.decode('utf-8')
+            failure = await self.optional(failure_key)
+            if failure is not None:
+                record = failure.json()
+                if type(record) is not dict or set(record) != {'code', 'message', 'diagnostic'}:
+                    raise _integrity()
+                raise ProcessingError(record['code'], record['message'],
+                                      diagnostic=sanitize_diagnostic(record['diagnostic']))
+            return None
+
+        existing = await replay()
+        if existing is not None:
+            return existing
+        try:
+            await self._write(admission_key, _json({'version': 1, 'page': page, 'attempt': attempt}), 'application/json')
+        except ProcessingError as exc:
+            if exc.code != 'ARCHIVE_CONFLICT':
+                raise
+            existing = await replay()
+            if existing is not None:
+                return existing
             raise ProcessingError('VISION_CALL_OUTCOME_UNKNOWN',
                                   'Previous vision request may have reached the provider; no automatic repeat is permitted.') from exc
-        raw = await invoke()
+        try:
+            raw = await invoke()
+        except ProcessingError as exc:
+            if known_failure(exc):
+                # Provider sent a definite error/invalid response. Persist a
+                # sanitized outcome so a worker redelivery can progress to the
+                # next attempt rather than treating it as an unknown charge.
+                await self._write(failure_key, _json({'code': exc.code, 'message': exc.message,
+                    'diagnostic': sanitize_diagnostic(exc.diagnostic)}), 'application/json')
+            raise
         if not isinstance(raw, str) or len(raw.encode('utf-8')) > 2_000_000:
-            raise ProcessingError('VISION_RESPONSE_INVALID', 'Vision response exceeds the archive limit.')
+            err = ProcessingError('VISION_RESPONSE_INVALID', 'Vision response exceeds the archive limit.')
+            await self._write(failure_key, _json({'code': err.code, 'message': err.message,
+                'diagnostic': {}}), 'application/json')
+            raise err
         await self._write(result_key, raw.encode('utf-8'), 'application/json')
         return raw
+
+    async def durable_vision_page(self, document_id, run_id, page, png, settings, invoke, validate,
+                                  *, prior_runs=(), on_attempt=None):
+        """Return only validated pages; cache across failed and later runs.
+
+        A corrupt/malformed response is never published into the shared cache.
+        Prior v0.12.4 recorded responses are eligible for on-demand backfill
+        only after being validated against the current page image.
+        """
+        from app.vision_retry import known_failure, retry_delay
+        from app.vision_debug import log_invalid_vision_response
+        import logging
+        log = logging.getLogger(__name__)
+        key = self.vision_page_cache_key(document_id, png, settings)
+        cached = await self.optional(key)
+        if cached is not None:
+            # Even stored entries must pass the current strict validator.
+            try:
+                result = await validate(cached.data.decode('utf-8'))
+            except (ProcessingError, UnicodeError) as exc:
+                raise _integrity() from exc
+            log.info('Validated vision page cache hit page=%d', page,
+                     extra={'event': 'vision.page.cache.hit', 'page': page})
+            return result
+
+        async def publish(raw, result):
+            try:
+                await self._write(key, raw.encode('utf-8'), 'application/json')
+            except ProcessingError as exc:
+                if exc.code != 'ARCHIVE_CONFLICT':
+                    raise
+                # Concurrent same-document run may have cached an equally
+                # valid but different model reply; prefer the canonical copy.
+                current = await self._read(key)
+                return await validate(current.data.decode('utf-8'))
+            return result
+
+        for earlier_run in prior_runs:
+            raw_copy = await self.optional(self.vision_call_key(document_id, earlier_run, page, response=True))
+            if raw_copy is None:
+                continue
+            try:
+                raw = raw_copy.data.decode('utf-8')
+                result = await validate(raw)
+            except (ProcessingError, UnicodeError):
+                # Ignore old invalid replies; never poison the new cache.
+                continue
+            log.info('Reusing previously paid vision page page=%d', page,
+                     extra={'event': 'vision.page.cache.backfill', 'page': page})
+            return await publish(raw, result)
+
+        for attempt in range(1, settings.vision_figures_page_attempts + 1):
+            if on_attempt is not None:
+                await on_attempt(attempt)
+            raw = None
+            try:
+                raw = await self.durable_vision_response(document_id, run_id, page,
+                    invoke, attempt=attempt)
+                result = await validate(raw)
+            except ProcessingError as exc:
+                if raw is not None:
+                    log_invalid_vision_response(settings, raw, page=page,
+                                                attempt=attempt, exc=exc)
+                if not known_failure(exc) or attempt == settings.vision_figures_page_attempts:
+                    raise exc.with_context(attempt=attempt,
+                        max_attempts=settings.vision_figures_page_attempts)
+                log.warning('Retrying invalid vision page=%d attempt=%d/%d reason=%s',
+                    page, attempt, settings.vision_figures_page_attempts, exc.code,
+                    extra={'event': 'vision.page.retry', 'page': page, 'error_code': exc.code})
+                await retry_delay(attempt)
+                continue
+            log.info('Validated vision page stored page=%d attempt=%d', page, attempt,
+                     extra={'event': 'vision.page.validated', 'page': page})
+            return await publish(raw, result)
+        raise AssertionError('Exhausted vision attempts without a terminal outcome')
 
     async def iter_manifest_keys(self, document_id: str | None = None):
         """Yield only canonical document/run manifest keys, through all S3 pages."""

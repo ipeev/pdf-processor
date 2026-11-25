@@ -223,6 +223,7 @@ async def document_status(request: Request, document_id: UUID):
         return DocumentStatus(
             id=document_id, filename=meta["filename"], parser=meta["parser"], status=effective["status"],
             page_count=int(effective["page_count"]) if effective.get("page_count") else None,
+            page_progress=repo.parse_page_progress(effective),
             summary=summary, error=error, created_at=meta["created_at"], updated_at=effective["updated_at"],
             cache=meta.get("cache", "miss"),
             trace_id=effective.get("trace_id") or None, upload_id=UUID(meta["upload_id"]) if meta.get("upload_id") else None,

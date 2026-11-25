@@ -1,4 +1,4 @@
-# Architecture — PDF Processor 0.12.3
+# Architecture — PDF Processor
 
 This document describes the **currently implemented** system. Diagrams use native GitHub Mermaid Markdown. It is a single-host, trusted-user Docker Compose architecture; it is not a public multi-tenant service.
 
@@ -14,15 +14,15 @@ flowchart TB
         W["Two worker containers<br/>20 consumers per container by default"]
         Redis[("Redis Streams<br/>jobs + volatile cache")]
         RustFS[("RustFS<br/>permanent and temporary object buckets")]
-        Search[("OpenSearch<br/>rebuildable catalogue")]
+        Search[("OpenSearch<br/>metadata + BM25 passages")]
         Coord[("Archive coordination volume<br/>flock")]
         Web -->|"/api/*"| API
         API <-->|"enqueue / status / cache"| Redis
         W <-->|"claim / heartbeat / ACK"| Redis
         API <-->|"read / write"| RustFS
         W <-->|"immutable results + figures"| RustFS
-        API <-->|"search / metadata"| Search
-        W -->|"projection"| Search
+        API <-->|"metadata / full-text"| Search
+        W -->|"run + passage projection"| Search
         API -.-> Coord
         W -.-> Coord
       end
@@ -36,7 +36,7 @@ flowchart TB
 
 `frontend` exposes 127.0.0.1:3000 and proxies `/api/*`. `api` exposes 127.0.0.1:8000. RustFS exposes 127.0.0.1:9000/9001. Redis has no host port. OpenSearch runs on an internal Compose network without a published port; its security plugin is disabled. API/workers run as UID 10001, with dropped capabilities and no privilege escalation. A one-shot constrained initializer prepares named volume ownership.
 
-The app currently uses Redis 7.4, RustFS 1.0.3, OpenSearch 3.10.0, Python 3.15.2 (backend), and Node 22/React 19 (frontend). Container and environment versions are defined by `docker-compose.yml` and the Dockerfiles.
+The app currently uses Redis 7.4, RustFS 1.0.3, OpenSearch 3.10.0, Python 3.15.2 (backend), and Node 26/React 19 (frontend). Container and environment versions are defined by `docker-compose.yml` and the Dockerfiles.
 
 ## Upload, processing, and result lifecycle
 
@@ -74,6 +74,7 @@ sequenceDiagram
     AI-->>Worker: Summary, or error
     Worker->>S3: Commit terminal run manifest
     Worker->>Search: Publish terminal metadata projection
+    Worker->>Search: Reindex committed page passages (best effort)
     Worker->>R: Record status and ACK owned job
     Browser->>API: Poll/run detail/pages/images/download
     API->>S3: Read verified committed artifacts
@@ -126,3 +127,19 @@ OpenSearch indexed lists may temporarily lag an authoritative RustFS read. Maint
 - **Container recreation:** expected to preserve named volumes, but may interrupt jobs. `docker compose down -v` removes all named volumes and must not be used for routine maintenance.
 
 See [API contract](PERSISTENT_API.md), [operations](OPERATIONS.md), [configuration](CONFIGURATION.md), and [security](../SECURITY.md).
+
+
+## Full-text search pipeline
+
+```mermaid
+flowchart LR
+    Archive[("RustFS · pages.json / manifests")] -->|"committed, completed/partial runs"| Split["220-word page-local passages"]
+    Split --> Index[("OpenSearch · pdf-passages-v1")]
+    Browser["React Search tab"] -->|"POST /api/v1/search"| API["FastAPI Search API"]
+    API -->|"validated BM25 DSL"| Index
+    Index -->|"collapse document_id + top inner_hits"| API
+    API -->|"one PDF + page/run snippets"| Browser
+    Browser -->|"/runs/{id}?page=N"| Pages["Archived run page viewer"]
+```
+
+The passage index is a derived, resettable read model. Document SHA-256 groups runs under one PDF, while run UUID plus page and passage number preserve navigation. The worker indexes after committing the terminal run; an offline CLI rebuild uses the same immutable RustFS artifacts without making any model calls. See [Full-text search](FULL_TEXT_SEARCH.md) for matching, scoring, initial backfill, and current consistency limitations.

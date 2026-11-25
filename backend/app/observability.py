@@ -68,6 +68,15 @@ class JsonFormatter(logging.Formatter):
             value = getattr(record, key, None)
             if isinstance(value, (str, int, float, bool)):
                 obj[key] = value
+        # Explicitly opted-in diagnostic event; only this event bypasses the
+        # normal log-message truncation. It may contain confidential document
+        # text, and must not be emitted to remote OTLP logs.
+        if getattr(record, "event", "") == "vision.response.invalid.raw":
+            for field in ("vision_raw_model_content", "vision_raw_http_response",
+                          "vision_json_decode_error", "vision_attempt", "vision_finish_reason"):
+                value = getattr(record, field, None)
+                if value is not None:
+                    obj[field] = value
         if record.exc_info:
             # Do not serialize exceptions or tracebacks: third-party exceptions
             # can contain request payloads, credentials or PDF content.
@@ -79,7 +88,16 @@ class TextFormatter(logging.Formatter):
         current = trace.get_current_span().get_span_context()
         suffix = f" document={_document.get()}" if _document.get() else ""
         if current.is_valid: suffix += f" trace={current.trace_id:032x}"
-        return f"{record.levelname} {record.name} {_safe_message(record.getMessage())}{suffix}"
+        message = f"{record.levelname} {record.name} {_safe_message(record.getMessage())}{suffix}"
+        if getattr(record, "event", "") == "vision.response.invalid.raw":
+            # JSON-escape full multiline contents into a single Docker log
+            # entry. No length cap; opting in is intentionally explicit.
+            for field in ("vision_raw_model_content", "vision_raw_http_response",
+                          "vision_json_decode_error", "vision_attempt", "vision_finish_reason"):
+                value = getattr(record, field, None)
+                if value is not None:
+                    message += " " + field + "=" + json.dumps(value, ensure_ascii=False)
+        return message
 
 def setup_logging(log_format: str = "json", level: str = "INFO") -> None:
     handler = logging.StreamHandler()
@@ -111,7 +129,8 @@ class _SafeOtelLogHandler(logging.Handler):
         self._formatter = JsonFormatter()
 
     def emit(self, record: logging.LogRecord) -> None:
-        if record.name.startswith(("opentelemetry.", "urllib3.")):
+        if record.name.startswith(("opentelemetry.", "urllib3.")) or getattr(record, "event", "") == "vision.response.invalid.raw":
+            # Raw document text must never leave through the OTLP log exporter.
             return
         try:
             payload = self._formatter.format(record)

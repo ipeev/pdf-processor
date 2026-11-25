@@ -33,16 +33,17 @@ jobs:
         run: |
           python3 --version
           python3 scripts/check_publication.py
+          python3 scripts/sync_release_version.py --check
           python3 scripts/check_release_candidate.py
           python3 -m compileall -q backend/app scripts
           find scripts -type f -name '*.sh' -print0 | xargs -0 -r bash -n
           # Compose validation checks ports/networks without starting services.
           docker compose config -q
 
-      - name: Set up Node.js 22
+      - name: Set up Node.js 26
         uses: actions/setup-node@v7
         with:
-          node-version: '22'
+          node-version: '26'
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
@@ -77,15 +78,20 @@ jobs:
           docker compose version
           cp .env.example .env
           chmod 600 .env
+          # Preserve the monitored default in backend unit tests. Their
+          # OpenRouter responses are mocked; an empty API key prevents real
+          # provider requests from the running application.
           sed -i \
             -e 's/^OPENROUTER_API_KEY=.*/OPENROUTER_API_KEY=/' \
             -e 's/^RUN_LIVE_TESTS=.*/RUN_LIVE_TESTS=0/' \
-            -e 's/^OPENROUTER_MONITOR_ENABLED=.*/OPENROUTER_MONITOR_ENABLED=false/' \
-            -e 's/^OBSERVABILITY_ENABLED=.*/OBSERVABILITY_ENABLED=false/' \
+            -e 's/^OPENROUTER_MONITOR_ENABLED=.*/OPENROUTER_MONITOR_ENABLED=true/' \
+            -e 's/^OBSERVABILITY_ENABLED=.*/OBSERVABILITY_ENABLED=true/' \
             -e 's/^DOCKER_TELEMETRY_ENABLED=.*/DOCKER_TELEMETRY_ENABLED=false/' \
             .env
           grep -qx 'OPENROUTER_API_KEY=' .env
           grep -qx 'RUN_LIVE_TESTS=0' .env
+          grep -qx 'OPENROUTER_MONITOR_ENABLED=true' .env
+          grep -qx 'OBSERVABILITY_ENABLED=true' .env
           docker compose config -q
 
       - name: Full backend, frontend and real-service verification (NO PAID API calls)
@@ -96,11 +102,12 @@ jobs:
         # restart recovery, fixture-backed figures and an npm test/build stage.
         run: ./scripts/test_release.sh --offline
 
-      - name: Focused v0.12.3 regression verification
+      - name: Focused cache, vision, page-progress and search regression verification
         env:
           RUN_LIVE_TESTS: '0'
           OPENROUTER_API_KEY: ''
-        # Forces the uncached frontend Docker build; catches missing COPY paths.
+        # Forces an uncached frontend Docker build and focused offline Python regressions.
+        # All provider calls are mocked; no OpenRouter API key is available.
         run: ./scripts/check_regressions.sh
 
       - name: Show logs after failure (synthetic CI fixtures only)

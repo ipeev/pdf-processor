@@ -14,7 +14,8 @@ RUN_MANIFEST = re.compile(rf'{DOC}/runs/{RUN}/metadata\.json')
 ARTIFACT = re.compile(rf'{DOC}/runs/{RUN}/(?:artifacts/[0-9a-f]{{32}}/)?(?:pages\.json|document\.md|summary\.md|figures\.json|images/p[0-9]{{4}}-figure-[A-Za-z0-9_-]{{1,70}}\.png)')
 
 
-VISION_OBJECT = re.compile(rf'{DOC}/runs/{RUN}/vision/(?:admissions|responses)/p[0-9]{{4}}\.json')
+VISION_OBJECT = re.compile(rf'{DOC}/runs/{RUN}/vision/(?:admissions|responses|failures)/p[0-9]{{4}}(?:-a0[23])?\.json')
+VISION_CACHE = re.compile(rf'{DOC}/vision-cache/[0-9a-f]{{64}}\.json')
 
 def blank():
     return {'status': 'unavailable', 'checked_at': None, 'truncated': False,

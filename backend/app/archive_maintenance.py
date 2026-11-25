@@ -189,6 +189,11 @@ class ArchiveMaintenance:
     async def finish(self, plan):
         await self.idle()
         doc_id = plan.document_id
+        # Purge derived text before removing authoritative archive objects;
+        # if this fails the replayable deletion journal remains intact.
+        search_index = getattr(self.p, 'search_index', None)
+        if search_index is not None:
+            await search_index.remove_document(doc_id)
         if plan.kind == 'document':
             floor = max(plan.revision_floor, await self.archive.document_revision_floor(doc_id))
             await self.marker(f'tombstones/documents/{doc_id}.json', {'revision_floor': floor})
@@ -212,6 +217,8 @@ class ArchiveMaintenance:
                     return {}
                 return {'preferred_run_id': fallback.run_id if fallback else None, 'page_count': fallback.page_count if fallback else None}
             await self.p.documents._mutate(doc_id, prefer)
+            if search_index is not None:
+                await search_index.rebuild_document(self.p, doc_id)
         await self.archive.remove_key(JOURNAL)
 
     async def recover(self, *, cleanup=False):

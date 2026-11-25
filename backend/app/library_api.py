@@ -218,7 +218,11 @@ async def rename(request: Request, response: Response, document_id: DocumentID, 
     p = pipeline(request)
     async def operation():
         await get_document(p, document_id)
-        return await p.documents.rename(document_id, body.display_name)
+        renamed = await p.documents.rename(document_id, body.display_name)
+        search_index = getattr(p, 'search_index', None)
+        if search_index is not None:
+            await search_index.rebuild_document(p, document_id)
+        return renamed
     result = await guarded(p, operation, reconcile_on_error=True)
     response.headers.update(HEADERS)
     return document_view(result)
@@ -232,7 +236,11 @@ async def preferred(request: Request, response: Response, document_id: DocumentI
         run = await get_run(p, body.run_id)
         if run.document_id != document_id or run.status != JobState.completed:
             raise ProcessingError('INVALID_PREFERRED_RUN', 'Preferred run must be a completed run of this document.', 409)
-        return await p.documents.set_preferred(document_id, body.run_id)
+        changed = await p.documents.set_preferred(document_id, body.run_id)
+        search_index = getattr(p, 'search_index', None)
+        if search_index is not None:
+            await search_index.rebuild_document(p, document_id)
+        return changed
     result = await guarded(p, operation, reconcile_on_error=True)
     response.headers.update(HEADERS)
     return document_view(result)

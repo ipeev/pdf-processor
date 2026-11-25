@@ -6,6 +6,7 @@ A superseded worker may leave unreachable objects, but cannot replace a
 committed result. Index publication is retried from the manifest before ACK.
 """
 from __future__ import annotations
+from app.version import APPLICATION_VERSION
 import asyncio
 import json
 import logging
@@ -38,9 +39,10 @@ def encode_pages(parsed):
 
 
 class PersistentPipeline:
-    def __init__(self, settings, documents, runs, repo):
+    def __init__(self, settings, documents, runs, repo, *, search_index=None):
         self.settings, self.documents, self.runs, self.repo = settings, documents, runs, repo
         self.archive = runs.archive
+        self.search_index = search_index
 
     async def register(self, item, digest):
         original = await self.archive.put_original(item.temp_path, expected_sha256=item.sha256)
@@ -48,7 +50,7 @@ class PersistentPipeline:
         trace_id, upload_id = current_ids()
         run = RunManifest(run_id=item.id, document_id=original.document_id,
             filename=item.filename, parser=item.parser, upload_id=UUID(upload_id) if upload_id else None,
-            trace_id=trace_id or None, pipeline_version=PROMPT_VERSION, application_version='0.12.3',
+            trace_id=trace_id or None, pipeline_version=PROMPT_VERSION, application_version=APPLICATION_VERSION,
             extraction_model={'gemini': self.settings.native_pdf_model, 'gpt5_mini': self.settings.image_ocr_model, 'vision_figures': self.settings.vision_figures_model}.get(item.parser.value),
             summary_model=self.settings.summary_model, processing_fingerprint=digest,
             s3_prefix=f'{original.document_id}/runs/{item.id}/')
@@ -263,6 +265,15 @@ class PersistentPipeline:
         # but before the index/Redis acknowledgement. Never invoke AI here.
         await self.require_owner(run.run_id, token)
         await self.runs._publish(run)
+        # Search is a rebuildable projection. Never replay paid extraction if
+        # OpenSearch is unavailable; operators can run `search_cli rebuild`.
+        if self.search_index and run.has_extraction:
+            try:
+                await self.search_index.rebuild_document(self, run.document_id)
+            except Exception as exc:
+                # Derived-index failure must not prevent Redis ACK or trigger any
+                # additional paid work. Operators can rebuild from RustFS.
+                log.warning('Search projection deferred for document=%s error=%s', run.document_id, type(exc).__name__)
         if run.status == JobState.completed:
             await self.repo.store_completed(run.run_id, await self.read_extraction(run), await self.read_summary(run), owner_token=token)
         else:
@@ -325,17 +336,51 @@ class PersistentPipeline:
                     path = Path(directory) / 'source.pdf'
                     await self.archive.fetch_original(run.document_id, path)
                     try:
+                        async def report_progress(page, pages_total, attempt=1, max_attempts=1):
+                            try:
+                                await self.repo.set_page_progress(run_id, page, pages_total,
+                                    owner_token=token, attempt=attempt, max_attempts=max_attempts)
+                            except ProcessingError as exc:
+                                if exc.code == 'JOB_LEASE_LOST':
+                                    raise
+                                log.warning('Unable to update page progress for %s: %s', run_id, exc.code)
+                            except RedisError:
+                                # UI progress must not cause a paid extraction to repeat.
+                                log.warning('Temporary Redis outage while reporting page progress for %s', run_id)
                         if run.parser.value == 'vision_figures':
-                            async def durable_page(page, png):
+                            # Recover validated page replies from earlier runs
+                            # of the same document, including failed runs made
+                            # by v0.12.4 before the shared page cache existed.
+                            earlier_runs = []
+                            async for manifest_key in self.archive.iter_manifest_keys(run.document_id):
+                                if '/runs/' not in manifest_key:
+                                    continue
+                                candidate = RunManifest.model_validate_json((await self.archive._read(manifest_key)).data)
+                                if (candidate.run_id != run.run_id and candidate.parser.value == 'vision_figures'
+                                        and candidate.processing_fingerprint == run.processing_fingerprint):
+                                    earlier_runs.append(candidate.run_id)
+
+                            async def durable_page(page, png, validate):
                                 await self.require_owner(run_id, token)
                                 adapter = processor.parsers['vision_figures']
-                                return await self.archive.durable_vision_response(
-                                    run.document_id, run.run_id, page,
+                                return await self.archive.durable_vision_page(
+                                    run.document_id, run.run_id, page, png, self.settings,
                                     lambda: adapter.client.complete_vision_figures_page(
-                                        png, page=page, max_tokens=self.settings.vision_figures_max_tokens_per_page))
-                            parsed = await processor.extract(run.parser.value, path, page_response=durable_page)
+                                        png, page=page, max_tokens=self.settings.vision_figures_max_tokens_per_page),
+                                    validate, prior_runs=earlier_runs,
+                                    on_attempt=lambda attempt: report_progress(
+                                        page, len_count[0], attempt, self.settings.vision_figures_page_attempts))
+                            # Parser reports the page count before invoking the
+                            # durable page callback. Save it for retry progress.
+                            len_count = [0]
+                            async def vision_progress(page, pages_total, attempt=1, max_attempts=1):
+                                len_count[0] = pages_total
+                                await report_progress(page, pages_total, attempt, max_attempts)
+                            parsed = await processor.extract(run.parser.value, path,
+                                page_response=durable_page, on_progress=vision_progress)
                         else:
-                            parsed = await processor.extract(run.parser.value, path)
+                            parsed = await processor.extract(run.parser.value, path,
+                                on_progress=report_progress)
                     except ProcessingError as exc:
                         run = await self.fail(run, token, exc)
                     except (RedisError, ConnectionError):
@@ -380,8 +425,18 @@ class PersistentPipeline:
                     status, error = JobState.summarizing, None
             except RedisError:
                 pass
+        progress = None
+        if status == JobState.processing:
+            try:
+                meta = await self.repo.get_meta(run_id)
+                progress = self.repo.parse_page_progress(meta)
+            except RedisError:
+                # Progress is optional: archive status remains available even if
+                # Redis metadata is absent or temporarily unavailable.
+                pass
         return DocumentStatus(id=run.run_id, filename=run.filename, parser=run.parser,
-            status=status, page_count=run.page_count, summary=summary, cache=run.cache,
+            status=status, page_count=run.page_count, page_progress=progress,
+            summary=summary, cache=run.cache,
             trace_id=run.trace_id, upload_id=run.upload_id, error=error,
             created_at=run.created_at, updated_at=run.updated_at)
 
